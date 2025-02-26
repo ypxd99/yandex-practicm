@@ -23,8 +23,8 @@ func Connect() (*bun.DB, error) {
 	cfg := util.GetConfig().Postgres
 	connStr := fmt.Sprintf(dbConnStr, cfg.User, cfg.Password, cfg.Address, cfg.DBName)
 
-	sqlDb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(connStr)))
-	db = bun.NewDB(sqlDb, pgdialect.New())
+	sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(connStr)))
+	db = bun.NewDB(sqlDB, pgdialect.New())
 
 	if cfg.Trace {
 		db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
