@@ -6,7 +6,7 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-func MigrateDbUp(ctx context.Context) error {
+func MigrateDBUp(ctx context.Context) error {
 	db, err := Connect()
 	if err != nil {
 		return err
@@ -14,7 +14,7 @@ func MigrateDbUp(ctx context.Context) error {
 	return goose.UpContext(ctx, db.DB, "./migration")
 }
 
-func MigrateDbDown(ctx context.Context) error {
+func MigrateDBDown(ctx context.Context) error {
 	db, err := Connect()
 	if err != nil {
 		return err

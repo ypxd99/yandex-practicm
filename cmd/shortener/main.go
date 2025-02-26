@@ -57,7 +57,7 @@ func main() {
 func makeMegrations() {
 	// migrate UP
 	util.GetLogger().Info("start migrations")
-	err := postgres.MigrateDbUp(context.Background())
+	err := postgres.MigrateDBUp(context.Background())
 	if err != nil {
 		util.GetLogger().Error(err)
 		return
@@ -65,7 +65,7 @@ func makeMegrations() {
 	util.GetLogger().Info("migrations up")
 
 	// migrate DOWN
-	//err = postgres.MigrateDbDown(context.Background())
+	//err = postgres.MigrateDBDown(context.Background())
 	//if err != nil {
 	//	util.GetLogger().Error(err)
 	//	return
