@@ -26,6 +26,6 @@ Postgres:
   MaxConnLifeTime: 2
   Trace: true
   MakeMigration: true
-  SqlKeyWords: ["DELETE", "DROP", "EXEC", "EXECUTE", "SELECT", "TRIM", "TRUNCATE"]
+  SQLKeyWords: ["DELETE", "DROP", "EXEC", "EXECUTE", "SELECT", "TRIM", "TRUNCATE"]
   
   

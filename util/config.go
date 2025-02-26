@@ -39,7 +39,7 @@ type Postgres struct {
 	MaxConnLifeTime int64    `yaml:"MaxConnLifeTime"`
 	Trace           bool     `yaml:"Trace"`
 	MakeMigration   bool     `yaml:"MakeMigration"`
-	SqlKeyWords     []string `yaml:"SqlKeyWords"`
+	SQLKeyWords     []string `yaml:"SQLKeyWords"`
 }
 
 func decode(str string) (string, error) {
