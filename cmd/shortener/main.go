@@ -70,6 +70,4 @@ func makeMegrations() {
 	//	util.GetLogger().Error(err)
 	//	return
 	//}
-
-	return
 }
