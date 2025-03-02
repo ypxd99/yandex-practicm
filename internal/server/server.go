@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -26,7 +25,7 @@ func NewServer(handler http.Handler) *Server {
 	cfg := util.GetConfig().Server
 	return &Server{
 		httpServer: &http.Server{
-			Addr:         fmt.Sprintf("%s:%d", cfg.Address, cfg.Port),
+			Addr:         cfg.ServerAddress,
 			ReadTimeout:  time.Duration(cfg.RTimeout) * time.Second,
 			WriteTimeout: time.Duration(cfg.WTimeout) * time.Second,
 			Handler:      handler,

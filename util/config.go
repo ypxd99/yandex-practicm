@@ -2,6 +2,8 @@ package util
 
 import (
 	"encoding/base64"
+	"flag"
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -23,10 +25,12 @@ type Config struct {
 }
 
 type Server struct {
-	Address  string `yaml:"Address"`
-	Port     uint   `yaml:"Port"`
-	RTimeout int64  `yaml:"RTimeout"`
-	WTimeout int64  `yaml:"WTimeout"`
+	BaseURL       string `-`
+	ServerAddress string `-`
+	Address       string `yaml:"Address"`
+	Port          uint   `yaml:"Port"`
+	RTimeout      int64  `yaml:"RTimeout"`
+	WTimeout      int64  `yaml:"WTimeout"`
 }
 
 type Postgres struct {
@@ -105,6 +109,11 @@ func GetConfig() *Config {
 		if conf.Postgres.UsePostgres {
 			decodeCFG(&conf)
 		}
+
+		flag.StringVar(&conf.Server.ServerAddress, "a", fmt.Sprintf("%s:%d", conf.Server.Address, conf.Server.Port), "HTTP server address")
+		flag.StringVar(&conf.Server.BaseURL, "b", fmt.Sprintf("http://%s:%d", conf.Server.Address, conf.Server.Port), "Base URL for short links")
+		flag.Parse()
+
 		config = &conf
 	})
 

@@ -26,7 +26,7 @@ func main() {
 	logger := util.GetLogger()
 	logger.Info("start shortener service")
 
-	if cfg.Postgres.MakeMigration && cfg.Postgres.UsePostgres{
+	if cfg.Postgres.MakeMigration && cfg.Postgres.UsePostgres {
 		go makeMegrations()
 	}
 
@@ -51,9 +51,7 @@ func main() {
 
 	srv := server.NewServer(router)
 	go func() {
-		util.GetLogger().Infof("SHORTENER server listeing at: %s:%d",
-			cfg.Server.Address,
-			cfg.Server.Port)
+		util.GetLogger().Infof("SHORTENER server listeing at: %s", cfg.Server.ServerAddress)
 
 		err := srv.Run()
 		if !errors.Is(err, http.ErrServerClosed) {

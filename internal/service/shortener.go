@@ -30,7 +30,7 @@ func (s *Service) ShorterLink(ctx context.Context, req string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("http://%s:%d/%s", util.GetConfig().Server.Address, util.GetConfig().Server.Port, link.ID), nil
+	return fmt.Sprintf("%s/%s", util.GetConfig().Server.BaseURL, link.ID), nil
 }
 
 func (s *Service) FindLink(ctx context.Context, req string) (string, error) {
