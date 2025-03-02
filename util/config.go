@@ -25,8 +25,8 @@ type Config struct {
 }
 
 type Server struct {
-	BaseURL       string
-	ServerAddress string
+	ServerAddress string `yaml:"-"`
+	BaseURL       string `yaml:"-"`
 	Address       string `yaml:"Address"`
 	Port          uint   `yaml:"Port"`
 	RTimeout      int64  `yaml:"RTimeout"`
@@ -113,6 +113,14 @@ func GetConfig() *Config {
 		flag.StringVar(&conf.Server.ServerAddress, "a", fmt.Sprintf("%s:%d", conf.Server.Address, conf.Server.Port), "HTTP server address")
 		flag.StringVar(&conf.Server.BaseURL, "b", fmt.Sprintf("http://%s:%d", conf.Server.Address, conf.Server.Port), "Base URL for short links")
 		flag.Parse()
+
+		if envAddr, exists := os.LookupEnv("SERVER_ADDRESS"); exists {
+            conf.Server.ServerAddress = envAddr
+        }
+
+        if envBaseURL, exists := os.LookupEnv("BASE_URL"); exists {
+            conf.Server.BaseURL = envBaseURL
+        }
 
 		config = &conf
 	})
