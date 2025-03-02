@@ -101,7 +101,7 @@ func GetConfig() *Config {
 			conf Config
 		)
 		parseConfig(&conf, cfgPath)
-		decodeCFG(&conf)
+		//decodeCFG(&conf)
 		config = &conf
 	})
 
