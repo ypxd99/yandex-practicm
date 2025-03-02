@@ -40,7 +40,7 @@ func TestShorterLinkHandler(t *testing.T) {
 
 		router.ServeHTTP(resp, req)
 
-		assert.Equal(t, http.StatusOK, resp.Code)
+		assert.Equal(t, http.StatusCreated, resp.Code)
 		assert.Equal(t, "abc123", resp.Body.String())
 		mockService.AssertExpectations(t)
 	})
