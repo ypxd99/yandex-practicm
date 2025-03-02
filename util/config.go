@@ -25,8 +25,8 @@ type Config struct {
 }
 
 type Server struct {
-	BaseURL       string `-`
-	ServerAddress string `-`
+	BaseURL       string
+	ServerAddress string
 	Address       string `yaml:"Address"`
 	Port          uint   `yaml:"Port"`
 	RTimeout      int64  `yaml:"RTimeout"`
