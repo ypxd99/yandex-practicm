@@ -25,7 +25,7 @@ func (h *Handler) shorterLink(c *gin.Context) {
 		return
 	}
 
-	responseTextPlain(c, http.StatusOK, nil, []byte(resp))
+	responseTextPlain(c, http.StatusCreated, nil, []byte(resp))
 }
 
 func (h *Handler) getLinkByID(c *gin.Context) {
