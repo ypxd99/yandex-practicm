@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ypxd99/yandex-practicm/internal/repository"
 	"github.com/ypxd99/yandex-practicm/internal/repository/postgres"
+	"github.com/ypxd99/yandex-practicm/internal/repository/storage"
 	"github.com/ypxd99/yandex-practicm/internal/server"
 	"github.com/ypxd99/yandex-practicm/internal/service"
 	"github.com/ypxd99/yandex-practicm/internal/transport/handler"
@@ -28,9 +30,15 @@ func main() {
 		go makeMegrations()
 	}
 
-	repo, err := postgres.Connect(context.Background())
-	if err != nil {
-		logger.Fatalf("Failed to initialize repository: %v", err)
+	var repo repository.LinkRepository
+	if cfg.Postgres.UsePostgres {
+		postgresRepo, err := postgres.Connect(context.Background())
+		if err != nil {
+			logger.Fatalf("Failed to initialize Postgres: %v", err)
+		}
+		repo = postgresRepo
+	} else {
+		repo = storage.InitStorage()
 	}
 	defer repo.Close()
 

@@ -39,6 +39,7 @@ type Postgres struct {
 	MaxConnLifeTime int64    `yaml:"MaxConnLifeTime"`
 	Trace           bool     `yaml:"Trace"`
 	MakeMigration   bool     `yaml:"MakeMigration"`
+	UsePostgres     bool     `yaml:"UsePostgres"`
 	SQLKeyWords     []string `yaml:"SQLKeyWords"`
 }
 

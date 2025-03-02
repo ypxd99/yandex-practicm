@@ -22,4 +22,8 @@ func (m *MockLinkRepository) FindLink(ctx context.Context, id string) (*model.Li
 	return args.Get(0).(*model.Link), args.Error(1)
 }
 
+func (m *MockLinkRepository) Close() error {
+	return nil
+}
+
 var _ repository.LinkRepository = (*MockLinkRepository)(nil)
