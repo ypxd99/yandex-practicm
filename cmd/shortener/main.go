@@ -26,7 +26,7 @@ func main() {
 	logger := util.GetLogger()
 	logger.Info("start shortener service")
 
-	if cfg.Postgres.MakeMigration {
+	if cfg.Postgres.MakeMigration && cfg.Postgres.UsePostgres{
 		go makeMegrations()
 	}
 

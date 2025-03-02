@@ -102,7 +102,9 @@ func GetConfig() *Config {
 			conf Config
 		)
 		parseConfig(&conf, cfgPath)
-		//decodeCFG(&conf)
+		if conf.Postgres.UsePostgres {
+			decodeCFG(&conf)
+		}
 		config = &conf
 	})
 
