@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/ypxd99/yandex-practicm/util"
 )
 
 func (s *Service) generateShortID() (string, error) {
@@ -28,7 +30,7 @@ func (s *Service) ShorterLink(ctx context.Context, req string) (string, error) {
 		return "", err
 	}
 
-	return link.ID, nil
+	return fmt.Sprintf("http://%s:%d/%s", util.GetConfig().Server.Address, util.GetConfig().Server.Port, link.ID), nil
 }
 
 func (s *Service) FindLink(ctx context.Context, req string) (string, error) {
