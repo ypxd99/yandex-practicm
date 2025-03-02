@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ypxd99/yandex-practicm/internal/repository/postgres"
 	"github.com/ypxd99/yandex-practicm/internal/server"
+	"github.com/ypxd99/yandex-practicm/internal/service"
 	"github.com/ypxd99/yandex-practicm/internal/transport/handler"
 	"github.com/ypxd99/yandex-practicm/util"
 )
@@ -27,8 +28,18 @@ func main() {
 		go makeMegrations()
 	}
 
+	repo, err := postgres.Connect(context.Background())
+	if err != nil {
+		logger.Fatalf("Failed to initialize repository: %v", err)
+	}
+	defer repo.Close()
+
+	// Инициализация сервиса
+	service := service.InitService(repo)
+	h := handler.InitHandler(service)
+
 	router := gin.Default()
-	handler.InitRoutes(router)
+	h.InitRoutes(router)
 
 	srv := server.NewServer(router)
 	go func() {

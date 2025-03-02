@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -14,17 +15,16 @@ import (
 
 const dbConnStr = "postgres://%s:%s@%s/%s?sslmode=disable"
 
-var db *bun.DB
+type Postgres struct {
+	db *bun.DB
+}
 
-func Connect() (*bun.DB, error) {
-	if db != nil {
-		return db, db.Ping()
-	}
+func Connect(ctx context.Context) (*Postgres, error) {
 	cfg := util.GetConfig().Postgres
 	connStr := fmt.Sprintf(dbConnStr, cfg.User, cfg.Password, cfg.Address, cfg.DBName)
 
 	sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(connStr)))
-	db = bun.NewDB(sqlDB, pgdialect.New())
+	db := bun.NewDB(sqlDB, pgdialect.New())
 
 	if cfg.Trace {
 		db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
@@ -33,5 +33,9 @@ func Connect() (*bun.DB, error) {
 	db.DB.SetConnMaxLifetime(time.Duration(cfg.MaxConnLifeTime) * time.Second)
 	db.Exec(`SET search_path TO shortener, public;`)
 
-	return db, db.Ping()
+	return &Postgres{db: db}, db.PingContext(ctx)
+}
+
+func (p *Postgres) Close() error {
+	return p.db.Close()
 }

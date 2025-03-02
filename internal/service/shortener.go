@@ -7,10 +7,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/ypxd99/yandex-practicm/internal/repository/postgres"
 )
 
-func generateShortID() (string, error) {
+func (s *Service) generateShortID() (string, error) {
 	b := make([]byte, 6)
 	_, err := rand.Read(b)
 	if err != nil {
@@ -19,12 +18,12 @@ func generateShortID() (string, error) {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(b), "="), nil
 }
 
-func ShorterLink(ctx context.Context, req string) (string, error) {
-	id, err := generateShortID()
+func (s *Service) ShorterLink(ctx context.Context, req string) (string, error) {
+	id, err := s.generateShortID()
 	if err != nil {
 		return "", err
 	}
-	link, err := postgres.CreateLink(ctx, id, req)
+	link, err := s.repo.CreateLink(ctx, id, req)
 	if err != nil {
 		return "", err
 	}
@@ -32,8 +31,8 @@ func ShorterLink(ctx context.Context, req string) (string, error) {
 	return link.ID, nil
 }
 
-func FindLink(ctx context.Context, req string) (string, error) {
-	link, err := postgres.FindLink(ctx, req)
+func (s *Service) FindLink(ctx context.Context, req string) (string, error) {
+	link, err := s.repo.FindLink(ctx, req)
 	if err != nil {
 		return "", err
 	}

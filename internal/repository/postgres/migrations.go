@@ -7,17 +7,17 @@ import (
 )
 
 func MigrateDBUp(ctx context.Context) error {
-	db, err := Connect()
+	db, err := Connect(ctx)
 	if err != nil {
 		return err
 	}
-	return goose.UpContext(ctx, db.DB, "./migration")
+	return goose.UpContext(ctx, db.db.DB, "./migration")
 }
 
 func MigrateDBDown(ctx context.Context) error {
-	db, err := Connect()
+	db, err := Connect(ctx)
 	if err != nil {
 		return err
 	}
-	return goose.DownContext(ctx, db.DB, "./migration")
+	return goose.DownContext(ctx, db.db.DB, "./migration")
 }
