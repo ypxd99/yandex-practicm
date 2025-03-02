@@ -42,7 +42,6 @@ func main() {
 	}
 	defer repo.Close()
 
-	// Инициализация сервиса
 	service := service.InitService(repo)
 	h := handler.InitHandler(service)
 
