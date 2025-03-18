@@ -21,10 +21,11 @@ func responseTextPlain(c *gin.Context,
 		c.String(statusCode, err.Error())
 		return
 	}
-	
+
 	c.Data(statusCode, "text/plain; charset=utf-8", message)
 }
 
+/*
 func response(c *gin.Context,
 	statusCode int,
 	err error,
@@ -41,3 +42,4 @@ func response(c *gin.Context,
 
 	c.AbortWithStatusJSON(statusCode, resp)
 }
+*/
