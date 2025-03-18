@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ypxd99/yandex-practicm/internal/model"
 )
 
 func (h *Handler) shorterLink(c *gin.Context) {
@@ -42,4 +43,25 @@ func (h *Handler) getLinkByID(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusTemporaryRedirect, resp)
+}
+
+func (h *Handler) shorten(c *gin.Context) {
+	var (
+		err error
+		req model.ShortenRequest
+	)
+
+	err = c.ShouldBindJSON(&req)
+	if err != nil || req.URL == ""{
+		response(c, http.StatusBadRequest, err, model.ShortenResponse{Result: ""})
+		return
+	}
+
+	resp, err := h.service.ShorterLink(c.Request.Context(), req.URL)
+	if err != nil {
+		response(c, http.StatusInternalServerError, err, model.ShortenResponse{Result: ""})
+		return
+	}
+
+	response(c, http.StatusCreated, nil, model.ShortenResponse{Result: resp})
 }

@@ -25,21 +25,20 @@ func responseTextPlain(c *gin.Context,
 	c.Data(statusCode, "text/plain; charset=utf-8", message)
 }
 
-/*
 func response(c *gin.Context,
 	statusCode int,
 	err error,
 	message interface{}) {
-	resp := Response{
-		Resp: message,
-	}
+	//resp := Response{
+	//	Resp: message,
+	//}
 
 	if err != nil {
-		resp.ErrorText = err.Error()
-		resp.HasError = true
+		//resp.ErrorText = err.Error()
+		//resp.HasError = true
 		util.GetLogger().Error(err)
 	}
 
-	c.AbortWithStatusJSON(statusCode, resp)
+	c.AbortWithStatusJSON(statusCode, message)
+	//c.AbortWithStatusJSON(statusCode, resp)
 }
-*/
