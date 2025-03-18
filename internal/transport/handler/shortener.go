@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -51,8 +52,16 @@ func (h *Handler) shorten(c *gin.Context) {
 		req model.ShortenRequest
 	)
 
-	err = c.ShouldBindJSON(&req)
-	if err != nil || req.URL == ""{
+	//err = c.ShouldBindJSON(&req)
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		response(c, http.StatusBadRequest, err, model.ShortenResponse{Result: ""})
+		return
+	}
+	defer c.Request.Body.Close()
+
+	// Декодирование JSON
+	if err := json.Unmarshal(body, &req); err != nil || req.URL == "" {
 		response(c, http.StatusBadRequest, err, model.ShortenResponse{Result: ""})
 		return
 	}
