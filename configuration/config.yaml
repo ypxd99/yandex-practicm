@@ -1,0 +1,32 @@
+Logger:
+  Level: trace
+  File:
+    Enabled: false
+    FileName: log/shortener.log
+    MaxSize: 10
+    MaxBackups: 10
+    MaxAge: 10
+  SysLog:
+    Enabled: false
+    Address: ""
+    Network: ""
+    Tag: ""
+Server:
+  Address: "127.0.0.1"
+  Port: 8080
+  RTimeout: 10
+  WTimeout: 10
+Postgres:
+  DriverName: "postgres"
+  Address: "kO3SOLQFIjyhIX6bMZZhDKZ89Fn487+Hyt7Ulgv/PNoAXWZh1uYspUR1sbeZU3tCsa80T+gAvEAF/YxidAhj2+w2ITCGp26EKOhSzKl9af3Pq4r6dQ47wDiAa7ID9pvoy5HUbYiu4HlHGsR59laNnPzdx82klBbtG5OOvILe5kTFgJuDuoTuOGg4vsSEmSJE/mo89+ZHIcNIUkvWX7glpqgUDT2SSqgpFZSl97aOvG6HB0M1C71YpuAATXO3vTesGwuZkGXdjxWDzJaD/LR6mTxy6rkSLae/N9HeBaa4zuQtkYKssDRoVamg9c4Ze7vH4IH6atFDYpdTL3pYYEIF5Q=="
+  DBName: "project"
+  User: "fcI5WhYNkYT9l+ZcOxL31weyEb1acMOfHy8+bbfQWJcdbxZLGNxWd5o896bejIUKO3GWiMYGMrmDdJexuA2PtjXMyFKG5IRLBS4o50GwEEkQm8PiD5i7CY3a25Zht2xhLgwQbmBMCtj+I6ifD0EQb5ukrYGB4D581rf0HvnrJwB/ScI0bDRDLXRI6OtrLd7xbU4lqcCN/VrCUKieLXOrOFFhVlODch0tsDXgB39J2CDWC1k6wIZ6O36qwCBDMfAemxJ/IyekH3EukpfRluUvpd3zc63f5GibEFhQdqXydwRat48GQORQ2e9tRNnB4MbmcrAsfdqfY+Ex+q+MI90HXw=="
+  Password: "QmDNFm9vwfkQ0NAYqCkdY5rxpdkz0PZ4DOQWOvYVxQonNJLqDMfyPxReS2dvML7jaDk1e5sY/5il3LC27HQc2pwJtu2/3KVAyNsU+vcDKnZrJAWzRYIG5o6DysbwP0rC6aV4f5PuXVosZGJvw2G/Fp0iJl+0rkVfEo/BEDsVEyTAx/bkR0l//MDLlQaOhTNpKVEAg2nmUFA+AqksNe9ZqRLr7vf0cmkqQq1yfNox6DCvOoxrRc9LYUak/v/huH7eVIEimREBfy95HUCNvQUzviMOIhBtY49nuer5fd0MaqgvgiNPaAo9T7RDP2er/jynHk5kHGb1IVBpYresD0C8AA=="
+  MaxConn: 10
+  MaxConnLifeTime: 2
+  Trace: true
+  MakeMigration: false
+  UsePostgres: false
+  SQLKeyWords: ["DELETE", "DROP", "EXEC", "EXECUTE", "SELECT", "TRIM", "TRUNCATE"]
+  
+  
