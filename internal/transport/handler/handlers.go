@@ -23,6 +23,6 @@ func (h *Handler) InitRoutes(r *gin.Engine) {
 	r.Use(middleware.LoggingMiddleware())
 	r.POST("/", h.shorterLink)
 	r.GET("/:id", h.getLinkByID)
-	rApi := r.Group("/api")
-	rApi.POST("/shorten", h.shorten)
+	rAPI := r.Group("/api")
+	rAPI.POST("/shorten", h.shorten)
 }
