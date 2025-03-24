@@ -20,10 +20,20 @@ func (w *responseWriter) Write(b []byte) (int, error) {
 	return w.buf.Write(b)
 }
 
+func (w *responseWriter) WriteHeader(code int) {
+	w.ResponseWriter.WriteHeader(code)
+}
+
 func GzipMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if strings.Contains(c.GetHeader("Content-Encoding"), "gzip") {
+		if strings.Contains(c.Request.Header.Get("Content-Encoding"), "gzip") {
 			handleGzipRequest(c)
+		}
+
+		acceptsGzip := strings.Contains(c.Request.Header.Get("Accept-Encoding"), "gzip")
+		if !acceptsGzip {
+			c.Next()
+			return
 		}
 
 		wr := &responseWriter{
@@ -35,14 +45,12 @@ func GzipMiddleware() gin.HandlerFunc {
 		c.Next()
 
 		contentType := c.Writer.Header().Get("Content-Type")
-		acceptEncoding := c.GetHeader("Accept-Encoding")
-		if strings.Contains(contentType, "application/json") || 
-			strings.Contains(contentType, "text/html") && 
-			strings.Contains(acceptEncoding, "gzip") {
-			handleGzipResponse(c, wr)
-		} else {
-			wr.ResponseWriter.Write(wr.buf.Bytes())
+		if !(strings.Contains(contentType, "application/json") || strings.Contains(contentType, "text/html")) {
+			c.Writer.Write(wr.buf.Bytes())
+			return
 		}
+
+		wr.handleGzipResponse()
 	}
 }
 
@@ -65,13 +73,12 @@ func handleGzipRequest(c *gin.Context) {
 	c.Request.ContentLength = int64(len(body))
 }
 
-func handleGzipResponse(c *gin.Context, wr *responseWriter) {
-	gz := gzip.NewWriter(c.Writer)
+func (w *responseWriter) handleGzipResponse() {
+	w.Header().Set("Content-Encoding", "gzip")
+	w.Header().Del("Content-Length")
+
+	gz := gzip.NewWriter(w.ResponseWriter)
 	defer gz.Close()
 
-	c.Writer.Header().Set("Content-Encoding", "gzip")
-	c.Writer.Header().Del("Content-Length")
-
-	gz.Write(wr.buf.Bytes())
-	gz.Flush()
+	gz.Write(w.buf.Bytes())
 }
