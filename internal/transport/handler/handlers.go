@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/ypxd99/yandex-practicm/internal/repository/middleware"
 	"github.com/ypxd99/yandex-practicm/internal/service"
 	"github.com/ypxd99/yandex-practicm/util"
 )
@@ -19,6 +20,10 @@ func (h *Handler) InitRoutes(r *gin.Engine) {
 	util.GetHealthcheckRoute(r)
 	util.GetRouteList(r)
 
+	r.Use(middleware.LoggingMiddleware())
+	r.Use(middleware.GzipMiddleware())
 	r.POST("/", h.shorterLink)
 	r.GET("/:id", h.getLinkByID)
+	rAPI := r.Group("/api")
+	rAPI.POST("/shorten", h.shorten)
 }
