@@ -30,12 +30,6 @@ func GzipMiddleware() gin.HandlerFunc {
 			handleGzipRequest(c)
 		}
 
-		acceptsGzip := strings.Contains(c.Request.Header.Get("Accept-Encoding"), "gzip")
-		if !acceptsGzip {
-			c.Next()
-			return
-		}
-
 		wr := &responseWriter{
 			ResponseWriter: c.Writer,
 			buf:            &bytes.Buffer{},
@@ -44,13 +38,16 @@ func GzipMiddleware() gin.HandlerFunc {
 
 		c.Next()
 
+		acceptsGzip := strings.Contains(c.Request.Header.Get("Accept-Encoding"), "gzip")
 		contentType := c.Writer.Header().Get("Content-Type")
-		if !(strings.Contains(contentType, "application/json") || strings.Contains(contentType, "text/html")) {
-			c.Writer.Write(wr.buf.Bytes())
+		if (strings.Contains(contentType, "application/json") || 
+				strings.Contains(contentType, "text/html")) &&
+				acceptsGzip {
+			wr.handleGzipResponse()
 			return
 		}
 
-		wr.handleGzipResponse()
+		wr.ResponseWriter.Write(wr.buf.Bytes())
 	}
 }
 
