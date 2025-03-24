@@ -19,9 +19,10 @@ var (
 )
 
 type Config struct {
-	Logger   LoggerCfg `yaml:"Logger"`
-	Server   Server    `yaml:"Server"`
-	Postgres Postgres  `yaml:"Postgres"`
+	Logger          LoggerCfg `yaml:"Logger"`
+	Server          Server    `yaml:"Server"`
+	Postgres        Postgres  `yaml:"Postgres"`
+	FileStoragePath string    `yaml:"FileStoragePath"`
 }
 
 type Server struct {
@@ -42,6 +43,7 @@ type Postgres struct {
 	MaxConn         int      `yaml:"MaxConn"`
 	MaxConnLifeTime int64    `yaml:"MaxConnLifeTime"`
 	Trace           bool     `yaml:"Trace"`
+	UseDecode       bool     `yaml:"UseDecode"`
 	MakeMigration   bool     `yaml:"MakeMigration"`
 	UsePostgres     bool     `yaml:"UsePostgres"`
 	SQLKeyWords     []string `yaml:"SQLKeyWords"`
@@ -106,21 +108,26 @@ func GetConfig() *Config {
 			conf Config
 		)
 		parseConfig(&conf, cfgPath)
-		if conf.Postgres.UsePostgres {
+		if conf.Postgres.UseDecode {
 			decodeCFG(&conf)
 		}
 
 		flag.StringVar(&conf.Server.ServerAddress, "a", fmt.Sprintf("%s:%d", conf.Server.Address, conf.Server.Port), "HTTP server address")
 		flag.StringVar(&conf.Server.BaseURL, "b", fmt.Sprintf("http://%s:%d", conf.Server.Address, conf.Server.Port), "Base URL for short links")
+		flag.StringVar(&conf.FileStoragePath, "f", conf.FileStoragePath, "Path to file storage")
 		flag.Parse()
 
 		if envAddr, exists := os.LookupEnv("SERVER_ADDRESS"); exists {
-            conf.Server.ServerAddress = envAddr
-        }
+			conf.Server.ServerAddress = envAddr
+		}
 
-        if envBaseURL, exists := os.LookupEnv("BASE_URL"); exists {
-            conf.Server.BaseURL = envBaseURL
-        }
+		if envBaseURL, exists := os.LookupEnv("BASE_URL"); exists {
+			conf.Server.BaseURL = envBaseURL
+		}
+
+		if envPath, exists := os.LookupEnv("FILE_STORAGE_PATH"); exists {
+			conf.FileStoragePath = envPath
+		}
 
 		config = &conf
 	})
