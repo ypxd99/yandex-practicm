@@ -21,6 +21,7 @@ func (h *Handler) InitRoutes(r *gin.Engine) {
 	util.GetRouteList(r)
 
 	r.Use(middleware.LoggingMiddleware())
+	r.Use(middleware.GzipMiddleware())
 	r.POST("/", h.shorterLink)
 	r.GET("/:id", h.getLinkByID)
 	rAPI := r.Group("/api")
