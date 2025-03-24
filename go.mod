@@ -1,8 +1,6 @@
 module github.com/ypxd99/yandex-practicm
 
-go 1.23.0
-
-toolchain go1.23.7
+go 1.22
 
 require (
 	github.com/gin-gonic/gin v1.10.0
