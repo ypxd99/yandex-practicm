@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -21,9 +20,10 @@ type Postgres struct {
 
 func Connect(ctx context.Context) (*Postgres, error) {
 	cfg := util.GetConfig().Postgres
-	connStr := fmt.Sprintf(dbConnStr, cfg.User, cfg.Password, cfg.Address, cfg.DBName)
+	//connStr := fmt.Sprintf(dbConnStr, cfg.User, cfg.Password, cfg.Address, cfg.DBName)
 
-	sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(connStr)))
+	//sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(connStr)))
+	sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(cfg.ConnString)))
 	db := bun.NewDB(sqlDB, pgdialect.New())
 
 	if cfg.Trace {
@@ -38,4 +38,13 @@ func Connect(ctx context.Context) (*Postgres, error) {
 
 func (p *Postgres) Close() error {
 	return p.db.Close()
+}
+
+func (p *Postgres) Status(ctx context.Context) (bool, error) {
+	err := p.db.PingContext(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

@@ -22,8 +22,17 @@ func (m *MockLinkRepository) FindLink(ctx context.Context, id string) (*model.Li
 	return args.Get(0).(*model.Link), args.Error(1)
 }
 
+func (m *MockLinkRepository) BatchCreate(ctx context.Context, links []model.Link) error {
+	args := m.Called(ctx, links)
+	return args.Error(0)
+}
+
 func (m *MockLinkRepository) Close() error {
 	return nil
+}
+
+func (m *MockLinkRepository) Status(ctx context.Context) (bool, error) {
+	return true, nil
 }
 
 var _ repository.LinkRepository = (*MockLinkRepository)(nil)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ypxd99/yandex-practicm/internal/model"
+	"github.com/ypxd99/yandex-practicm/internal/service"
 )
 
 func (h *Handler) shorterLink(c *gin.Context) {
@@ -23,6 +24,10 @@ func (h *Handler) shorterLink(c *gin.Context) {
 
 	resp, err := h.service.ShorterLink(c.Request.Context(), string(body))
 	if err != nil {
+		if errors.Is(err, service.ErrURLExist) {
+			responseTextPlain(c, http.StatusConflict, nil, []byte(resp))
+			return
+		}
 		responseTextPlain(c, http.StatusInternalServerError, err, nil)
 		return
 	}
@@ -60,17 +65,61 @@ func (h *Handler) shorten(c *gin.Context) {
 	}
 	defer c.Request.Body.Close()
 
-	// Декодирование JSON
-	if err := json.Unmarshal(body, &req); err != nil || req.URL == "" {
+	err = json.Unmarshal(body, &req)
+	if err != nil || req.URL == "" {
 		response(c, http.StatusBadRequest, err, model.ShortenResponse{Result: ""})
 		return
 	}
 
 	resp, err := h.service.ShorterLink(c.Request.Context(), req.URL)
 	if err != nil {
+		if errors.Is(err, service.ErrURLExist) {
+			response(c, http.StatusConflict, nil, model.ShortenResponse{Result: resp})
+			return
+		}
 		response(c, http.StatusInternalServerError, err, model.ShortenResponse{Result: ""})
 		return
 	}
 
 	response(c, http.StatusCreated, nil, model.ShortenResponse{Result: resp})
+}
+
+func (h *Handler) getStorageStatus(c *gin.Context) {
+	status, err := h.service.StorageStatus(c.Request.Context())
+	if err != nil {
+		response(c, http.StatusInternalServerError, err, nil)
+		return
+	}
+	if !status {
+		response(c, http.StatusInternalServerError, errors.New("bad storage status"), nil)
+		return
+	}
+
+	response(c, http.StatusOK, nil, nil)
+}
+
+
+func (h *Handler) batchShorten(c *gin.Context) {
+    var (
+		err error
+		req []model.BatchRequest
+	)
+    
+    err = c.ShouldBindJSON(&req)
+	if err != nil {
+        response(c, http.StatusBadRequest, err, nil)
+        return
+    }
+    if len(req) == 0 {
+        response(c, http.StatusBadRequest, errors.New("empty batch"), nil)
+        return
+    }
+
+    responses, err := h.service.BatchShorten(c.Request.Context(), req)
+    if err != nil {
+        response(c, http.StatusInternalServerError, err, nil)
+        return
+    }
+
+    response(c, http.StatusCreated, nil, responses)
 }

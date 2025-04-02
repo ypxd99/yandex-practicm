@@ -76,6 +76,25 @@ func (s *LocalStorage) FindLink(ctx context.Context, id string) (*model.Link, er
 	return &model.Link{ID: id, Link: url}, nil
 }
 
+func (s *LocalStorage) BatchCreate(ctx context.Context, links []model.Link) error {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+
+    for _, link := range links {
+        s.links[link.ID] = link.Link
+    }
+
+    if s.filePath != "" {
+		if err := s.writeToFile(); err != nil {
+			for _, link := range links {
+				delete(s.links, link.ID)
+			}
+			return err
+		}
+	}
+    return nil
+}
+
 func (s *LocalStorage) Close() error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -84,6 +103,10 @@ func (s *LocalStorage) Close() error {
 		return s.writeToFile()
 	}
 	return nil
+}
+
+func (s *LocalStorage) Status(ctx context.Context) (bool, error) {
+	return true, nil
 }
 
 func (s *LocalStorage) readFromFile() error {
