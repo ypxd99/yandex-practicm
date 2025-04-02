@@ -13,6 +13,7 @@ type Service struct {
 type LinkService interface {
 	ShorterLink(ctx context.Context, url string) (string, error)
 	FindLink(ctx context.Context, id string) (string, error)
+	StorageStatus(ctx context.Context) (bool, error)
 }
 
 func InitService(repo repository.LinkRepository) *Service {
