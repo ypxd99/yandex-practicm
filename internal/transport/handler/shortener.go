@@ -26,6 +26,7 @@ func (h *Handler) shorterLink(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, service.ErrURLExist) {
 			responseTextPlain(c, http.StatusConflict, nil, []byte(resp))
+			return
 		}
 		responseTextPlain(c, http.StatusInternalServerError, err, nil)
 		return
@@ -74,6 +75,7 @@ func (h *Handler) shorten(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, service.ErrURLExist) {
 			response(c, http.StatusConflict, nil, model.ShortenResponse{Result: resp})
+			return
 		}
 		response(c, http.StatusInternalServerError, err, model.ShortenResponse{Result: ""})
 		return
