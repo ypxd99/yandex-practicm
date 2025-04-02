@@ -86,5 +86,5 @@ func (h *Handler) getStorageStatus(c *gin.Context) {
 		return
 	}
 
-	response(c, http.StatusCreated, nil, nil)
+	response(c, http.StatusOK, nil, nil)
 }
