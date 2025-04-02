@@ -116,7 +116,8 @@ func GetConfig() *Config {
 		flag.StringVar(&conf.Server.ServerAddress, "a", fmt.Sprintf("%s:%d", conf.Server.Address, conf.Server.Port), "HTTP server address")
 		flag.StringVar(&conf.Server.BaseURL, "b", fmt.Sprintf("http://%s:%d", conf.Server.Address, conf.Server.Port), "Base URL for short links")
 		flag.StringVar(&conf.FileStoragePath, "f", conf.FileStoragePath, "Path to file storage")
-		flag.StringVar(&conf.Postgres.ConnString, "d", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", conf.Postgres.User, conf.Postgres.Password, conf.Postgres.Address, conf.Postgres.DBName), "Database connect string")
+		//flag.StringVar(&conf.Postgres.ConnString, "d", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", conf.Postgres.User, conf.Postgres.Password, conf.Postgres.Address, conf.Postgres.DBName), "Database connect string")
+		flag.StringVar(&conf.Postgres.ConnString, "d", "", "Database connect string")
 		flag.Parse()
 
 		if envAddr, exists := os.LookupEnv("SERVER_ADDRESS"); exists {
@@ -133,6 +134,11 @@ func GetConfig() *Config {
 
 		if envDB, exists := os.LookupEnv("DATABASE_DSN"); exists {
 			conf.Postgres.ConnString = envDB
+		}
+
+		//TODO: remove this
+		if conf.Postgres.ConnString == "" {
+			conf.Postgres.UsePostgres = false
 		}
 
 		config = &conf
