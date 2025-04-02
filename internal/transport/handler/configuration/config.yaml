@@ -28,5 +28,5 @@ Postgres:
   MakeMigration: true
   UsePostgres: false
   SQLKeyWords: ["DELETE", "DROP", "EXEC", "EXECUTE", "SELECT", "TRIM", "TRUNCATE"]
-  
-  
+FileStoragePath: store
+UseDecode: false
