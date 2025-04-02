@@ -74,3 +74,17 @@ func (h *Handler) shorten(c *gin.Context) {
 
 	response(c, http.StatusCreated, nil, model.ShortenResponse{Result: resp})
 }
+
+func (h *Handler) getStorageStatus(c *gin.Context) {
+	status, err := h.service.StorageStatus(c.Request.Context())
+	if err != nil {
+		response(c, http.StatusInternalServerError, err, nil)
+		return
+	}
+	if !status {
+		response(c, http.StatusInternalServerError, errors.New("bad storage status"), nil)
+		return
+	}
+
+	response(c, http.StatusCreated, nil, nil)
+}

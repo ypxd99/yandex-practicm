@@ -67,3 +67,7 @@ func (s *Service) FindLink(ctx context.Context, req string) (string, error) {
 
 	return link.Link, nil
 }
+
+func (s *Service) StorageStatus(ctx context.Context) (bool, error) {
+	return s.repo.Status(ctx)
+}

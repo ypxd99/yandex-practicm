@@ -25,9 +25,9 @@ Postgres:
   MaxConn: 10
   MaxConnLifeTime: 2
   Trace: true
-  UseDecode: false
   MakeMigration: false
-  UsePostgres: false
+  UsePostgres: true
   SQLKeyWords: ["DELETE", "DROP", "EXEC", "EXECUTE", "SELECT", "TRIM", "TRUNCATE"]
 FileStoragePath: store
+UseDecode: false
   

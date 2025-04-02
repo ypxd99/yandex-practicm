@@ -21,4 +21,9 @@ func (m *MockLinkService) FindLink(ctx context.Context, id string) (string, erro
 	return args.String(0), args.Error(1)
 }
 
+func (m *MockLinkService) StorageStatus(ctx context.Context) (bool, error) {
+	args := m.Called(ctx)
+	return args.Bool(0), args.Error(1)
+}
+
 var _ service.LinkService = (*MockLinkService)(nil)
