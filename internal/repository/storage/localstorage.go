@@ -86,6 +86,10 @@ func (s *LocalStorage) Close() error {
 	return nil
 }
 
+func (s *LocalStorage) Status(ctx context.Context) (bool, error) {
+	return true, nil
+}
+
 func (s *LocalStorage) readFromFile() error {
 	if _, err := os.Stat(s.filePath); os.IsNotExist(err) {
 		file, err := os.OpenFile(s.filePath, os.O_WRONLY|os.O_CREATE, 0644)

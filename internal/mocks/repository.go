@@ -26,4 +26,8 @@ func (m *MockLinkRepository) Close() error {
 	return nil
 }
 
+func (m *MockLinkRepository) Status(ctx context.Context) (bool, error) {
+	return true, nil
+}
+
 var _ repository.LinkRepository = (*MockLinkRepository)(nil)
