@@ -41,3 +41,24 @@ func (p *Postgres)  FindLink(ctx context.Context, id string) (*model.Link, error
 
 	return &link, err
 }
+
+func (p *Postgres) BatchCreate(ctx context.Context, links []model.Link) error {
+    tx, err := p.db.BeginTx(ctx, nil)
+    if err != nil {
+        return err
+    }
+    defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+    _, err = tx.NewInsert().
+        Model(&links).
+        Exec(ctx)
+    if err != nil {
+        return err
+    }
+
+    return tx.Commit()
+}
