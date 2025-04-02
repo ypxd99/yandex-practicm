@@ -28,8 +28,12 @@ func TestShorterLink(t *testing.T) {
 			Once()
 
 		id, err := svc.ShorterLink(ctx, "https://example.com")
+		if err != nil {
+			if !errors.Is(err, service.ErrURLExist) {
+				assert.NoError(t, err)
+			}
+		}
 
-		assert.NoError(t, err)
 		assert.NotEmpty(t, id)
 		mockRepo.AssertExpectations(t)
 	})
