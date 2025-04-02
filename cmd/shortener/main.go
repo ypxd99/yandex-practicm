@@ -30,7 +30,10 @@ func main() {
 		go makeMegrations()
 	}
 
-	var repo repository.LinkRepository
+	var (
+		repo repository.LinkRepository
+		err  error
+	)
 	if cfg.Postgres.UsePostgres {
 		postgresRepo, err := postgres.Connect(context.Background())
 		if err != nil {
@@ -38,7 +41,11 @@ func main() {
 		}
 		repo = postgresRepo
 	} else {
-		repo = storage.InitStorage()
+		repo, err = storage.InitStorage(cfg.FileStoragePath)
+		if err != nil {
+			util.GetLogger().Fatal(err)
+			return
+		}
 	}
 	defer repo.Close()
 
