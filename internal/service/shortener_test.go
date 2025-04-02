@@ -84,3 +84,28 @@ func TestFindLink(t *testing.T) {
 		mockRepo.AssertExpectations(t)
 	})
 }
+
+func TestBatchShorten(t *testing.T) {
+	cfg := util.GetConfig()
+	util.InitLogger(cfg.Logger)
+	ctx := context.Background()
+	t.Run("save batch", func(t *testing.T) {
+		mockRepo := new(mocks.MockLinkRepository)
+		svc := service.InitService(mockRepo)
+
+		mockRepo.On("BatchCreate", ctx, mock.AnythingOfType("[]model.Link")).
+			Return(nil).
+			Once()
+
+		batch := []model.BatchRequest{
+			{CorrelationID: "1", OriginalURL: "https://example.com"},
+			{CorrelationID: "2", OriginalURL: "https://yandex.ru"},
+		}
+
+		result, err := svc.BatchShorten(context.Background(), batch)
+
+		assert.NoError(t, err)
+		assert.Len(t, result, 2)
+		mockRepo.AssertExpectations(t)
+	})
+}

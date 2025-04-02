@@ -60,8 +60,8 @@ func (h *Handler) shorten(c *gin.Context) {
 	}
 	defer c.Request.Body.Close()
 
-	// Декодирование JSON
-	if err := json.Unmarshal(body, &req); err != nil || req.URL == "" {
+	err = json.Unmarshal(body, &req)
+	if err != nil || req.URL == "" {
 		response(c, http.StatusBadRequest, err, model.ShortenResponse{Result: ""})
 		return
 	}
@@ -87,4 +87,30 @@ func (h *Handler) getStorageStatus(c *gin.Context) {
 	}
 
 	response(c, http.StatusOK, nil, nil)
+}
+
+
+func (h *Handler) batchShorten(c *gin.Context) {
+    var (
+		err error
+		req []model.BatchRequest
+	)
+    
+    err = c.ShouldBindJSON(&req)
+	if err != nil {
+        response(c, http.StatusBadRequest, err, nil)
+        return
+    }
+    if len(req) == 0 {
+        response(c, http.StatusBadRequest, errors.New("empty batch"), nil)
+        return
+    }
+
+    responses, err := h.service.BatchShorten(c.Request.Context(), req)
+    if err != nil {
+        response(c, http.StatusInternalServerError, err, nil)
+        return
+    }
+
+    response(c, http.StatusCreated, nil, responses)
 }

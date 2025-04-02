@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stretchr/testify/mock"
+	"github.com/ypxd99/yandex-practicm/internal/model"
 	"github.com/ypxd99/yandex-practicm/internal/service"
 )
 
@@ -24,6 +25,11 @@ func (m *MockLinkService) FindLink(ctx context.Context, id string) (string, erro
 func (m *MockLinkService) StorageStatus(ctx context.Context) (bool, error) {
 	args := m.Called(ctx)
 	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockLinkService) BatchShorten(ctx context.Context, batch []model.BatchRequest) ([]model.BatchResponse, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]model.BatchResponse), args.Error(1)
 }
 
 var _ service.LinkService = (*MockLinkService)(nil)

@@ -27,4 +27,5 @@ func (h *Handler) InitRoutes(r *gin.Engine) {
 	r.GET("/ping", h.getStorageStatus)
 	rAPI := r.Group("/api")
 	rAPI.POST("/shorten", h.shorten)
+	rAPI.POST("/shorten/batch", h.batchShorten)
 }
