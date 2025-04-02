@@ -12,6 +12,8 @@ import (
 	"github.com/ypxd99/yandex-practicm/util"
 )
 
+var ErrURLExist = errors.New("url already exists")
+
 func normalizeQuery(data string) string {
 	keyWords := util.GetConfig().Postgres.SQLKeyWords
 	res := ""
@@ -54,6 +56,10 @@ func (s *Service) ShorterLink(ctx context.Context, req string) (string, error) {
 	link, err := s.repo.CreateLink(ctx, id, str)
 	if err != nil {
 		return "", err
+	}
+
+	if link.ID != id {
+		return fmt.Sprintf("%s/%s", util.GetConfig().Server.BaseURL, link.ID), ErrURLExist
 	}
 
 	return fmt.Sprintf("%s/%s", util.GetConfig().Server.BaseURL, link.ID), nil

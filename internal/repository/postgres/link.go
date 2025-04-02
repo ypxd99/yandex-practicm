@@ -11,8 +11,9 @@ func (p *Postgres) CreateLink(ctx context.Context, id, link string) (*model.Link
 
 	query := `
 		INSERT INTO shortener.links (id, link)
-		VALUES (?, ?)
-		RETURNING id, link;
+        VALUES (?, ?)
+        ON CONFLICT (link) DO UPDATE SET link = EXCLUDED.link
+        RETURNING id, link;
 	`
 
 	err := p.db.NewRaw(query, id, link).Scan(ctx, &newLink)
@@ -23,7 +24,7 @@ func (p *Postgres) CreateLink(ctx context.Context, id, link string) (*model.Link
 	return &newLink, nil
 }
 
-func (p *Postgres)  FindLink(ctx context.Context, id string) (*model.Link, error) {
+func (p *Postgres) FindLink(ctx context.Context, id string) (*model.Link, error) {
 	var (
 		link  model.Link
 		query = `
@@ -43,22 +44,22 @@ func (p *Postgres)  FindLink(ctx context.Context, id string) (*model.Link, error
 }
 
 func (p *Postgres) BatchCreate(ctx context.Context, links []model.Link) error {
-    tx, err := p.db.BeginTx(ctx, nil)
-    if err != nil {
-        return err
-    }
-    defer func() {
+	tx, err := p.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
 		if err != nil {
 			tx.Rollback()
 		}
 	}()
 
-    _, err = tx.NewInsert().
-        Model(&links).
-        Exec(ctx)
-    if err != nil {
-        return err
-    }
+	_, err = tx.NewInsert().
+		Model(&links).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
 
-    return tx.Commit()
+	return tx.Commit()
 }
