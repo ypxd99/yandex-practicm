@@ -8,8 +8,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/ypxd99/yandex-practicm/internal/model"
 	"github.com/ypxd99/yandex-practicm/util"
 )
+
+var ErrURLExist = errors.New("url already exists")
 
 func normalizeQuery(data string) string {
 	keyWords := util.GetConfig().Postgres.SQLKeyWords
@@ -55,6 +58,10 @@ func (s *Service) ShorterLink(ctx context.Context, req string) (string, error) {
 		return "", err
 	}
 
+	if link.ID != id {
+		return fmt.Sprintf("%s/%s", util.GetConfig().Server.BaseURL, link.ID), ErrURLExist
+	}
+
 	return fmt.Sprintf("%s/%s", util.GetConfig().Server.BaseURL, link.ID), nil
 }
 
@@ -66,4 +73,37 @@ func (s *Service) FindLink(ctx context.Context, req string) (string, error) {
 	}
 
 	return link.Link, nil
+}
+
+func (s *Service) StorageStatus(ctx context.Context) (bool, error) {
+	return s.repo.Status(ctx)
+}
+
+func (s *Service) BatchShorten(ctx context.Context, batch []model.BatchRequest) ([]model.BatchResponse, error) {
+	resp := make([]model.BatchResponse, 0, len(batch))
+	links := make([]model.Link, 0, len(batch))
+
+	for _, item := range batch {
+		shortURL, err := s.generateShortID()
+		if err != nil {
+			return nil, err
+		}
+
+		links = append(links, model.Link{
+			ID:   shortURL,
+			Link: item.OriginalURL,
+		})
+
+		resp = append(resp, model.BatchResponse{
+			CorrelationID: item.CorrelationID,
+			ShortURL:      fmt.Sprintf("%s/%s", util.GetConfig().Server.BaseURL, shortURL),
+		})
+	}
+
+	err := s.repo.BatchCreate(ctx, links)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }

@@ -23,6 +23,7 @@ type Config struct {
 	Server          Server    `yaml:"Server"`
 	Postgres        Postgres  `yaml:"Postgres"`
 	FileStoragePath string    `yaml:"FileStoragePath"`
+	UseDecode       bool      `yaml:"UseDecode"`
 }
 
 type Server struct {
@@ -35,6 +36,7 @@ type Server struct {
 }
 
 type Postgres struct {
+	ConnString      string   `yaml:"-"`
 	DriverName      string   `yaml:"DriverName"`
 	Address         string   `yaml:"Address"`
 	DBName          string   `yaml:"DBName"`
@@ -43,7 +45,6 @@ type Postgres struct {
 	MaxConn         int      `yaml:"MaxConn"`
 	MaxConnLifeTime int64    `yaml:"MaxConnLifeTime"`
 	Trace           bool     `yaml:"Trace"`
-	UseDecode       bool     `yaml:"UseDecode"`
 	MakeMigration   bool     `yaml:"MakeMigration"`
 	UsePostgres     bool     `yaml:"UsePostgres"`
 	SQLKeyWords     []string `yaml:"SQLKeyWords"`
@@ -108,13 +109,15 @@ func GetConfig() *Config {
 			conf Config
 		)
 		parseConfig(&conf, cfgPath)
-		if conf.Postgres.UseDecode {
+		if conf.UseDecode {
 			decodeCFG(&conf)
 		}
 
 		flag.StringVar(&conf.Server.ServerAddress, "a", fmt.Sprintf("%s:%d", conf.Server.Address, conf.Server.Port), "HTTP server address")
 		flag.StringVar(&conf.Server.BaseURL, "b", fmt.Sprintf("http://%s:%d", conf.Server.Address, conf.Server.Port), "Base URL for short links")
 		flag.StringVar(&conf.FileStoragePath, "f", conf.FileStoragePath, "Path to file storage")
+		//flag.StringVar(&conf.Postgres.ConnString, "d", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", conf.Postgres.User, conf.Postgres.Password, conf.Postgres.Address, conf.Postgres.DBName), "Database connect string")
+		flag.StringVar(&conf.Postgres.ConnString, "d", "", "Database connect string")
 		flag.Parse()
 
 		if envAddr, exists := os.LookupEnv("SERVER_ADDRESS"); exists {
@@ -127,6 +130,15 @@ func GetConfig() *Config {
 
 		if envPath, exists := os.LookupEnv("FILE_STORAGE_PATH"); exists {
 			conf.FileStoragePath = envPath
+		}
+
+		if envDB, exists := os.LookupEnv("DATABASE_DSN"); exists {
+			conf.Postgres.ConnString = envDB
+		}
+
+		//TODO: remove this
+		if conf.Postgres.ConnString == "" {
+			conf.Postgres.UsePostgres = false
 		}
 
 		config = &conf
