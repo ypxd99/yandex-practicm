@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -17,17 +18,18 @@ func TestShorterLink(t *testing.T) {
 	cfg := util.GetConfig()
 	util.InitLogger(cfg.Logger)
 	ctx := context.Background()
+	testUserID := uuid.New()
 
 	t.Run("successful creation", func(t *testing.T) {
 		mockRepo := new(mocks.MockLinkRepository)
 		svc := service.InitService(mockRepo)
 
-		expected := &model.Link{ID: "abc123", Link: "https://example.com"}
-		mockRepo.On("CreateLink", ctx, mock.Anything, "https://example.com").
+		expected := &model.Link{ID: "abc123", Link: "https://example.com", UserID: testUserID}
+		mockRepo.On("CreateLink", ctx, mock.Anything, "https://example.com", testUserID).
 			Return(expected, nil).
 			Once()
 
-		id, err := svc.ShorterLink(ctx, "https://example.com")
+		id, err := svc.ShorterLink(ctx, "https://example.com", testUserID)
 		if err != nil {
 			if !errors.Is(err, service.ErrURLExist) {
 				assert.NoError(t, err)
@@ -42,11 +44,11 @@ func TestShorterLink(t *testing.T) {
 		mockRepo := new(mocks.MockLinkRepository)
 		svc := service.InitService(mockRepo)
 
-		mockRepo.On("CreateLink", ctx, mock.Anything, "https://error.com").
+		mockRepo.On("CreateLink", ctx, mock.Anything, "https://error.com", testUserID).
 			Return((*model.Link)(nil), errors.New("db error")).
 			Once()
 
-		_, err := svc.ShorterLink(ctx, "https://error.com")
+		_, err := svc.ShorterLink(ctx, "https://error.com", testUserID)
 
 		assert.Error(t, err)
 		mockRepo.AssertExpectations(t)
@@ -57,12 +59,13 @@ func TestFindLink(t *testing.T) {
 	cfg := util.GetConfig()
 	util.InitLogger(cfg.Logger)
 	ctx := context.Background()
+	testUserID := uuid.New()
 
 	t.Run("found existing link", func(t *testing.T) {
 		mockRepo := new(mocks.MockLinkRepository)
 		svc := service.InitService(mockRepo)
 
-		expected := &model.Link{ID: "abc123", Link: "https://example.com"}
+		expected := &model.Link{ID: "abc123", Link: "https://example.com", UserID: testUserID}
 		mockRepo.On("FindLink", ctx, "abc123").
 			Return(expected, nil).
 			Once()
@@ -93,6 +96,8 @@ func TestBatchShorten(t *testing.T) {
 	cfg := util.GetConfig()
 	util.InitLogger(cfg.Logger)
 	ctx := context.Background()
+	testUserID := uuid.New()
+
 	t.Run("save batch", func(t *testing.T) {
 		mockRepo := new(mocks.MockLinkRepository)
 		svc := service.InitService(mockRepo)
@@ -106,10 +111,55 @@ func TestBatchShorten(t *testing.T) {
 			{CorrelationID: "2", OriginalURL: "https://yandex.ru"},
 		}
 
-		result, err := svc.BatchShorten(context.Background(), batch)
+		result, err := svc.BatchShorten(ctx, batch, testUserID)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+func TestGetUserURLs(t *testing.T) {
+	cfg := util.GetConfig()
+	util.InitLogger(cfg.Logger)
+	ctx := context.Background()
+	testUserID := uuid.New()
+
+	t.Run("get user urls successful", func(t *testing.T) {
+		mockRepo := new(mocks.MockLinkRepository)
+		svc := service.InitService(mockRepo)
+
+		links := []model.Link{
+			{ID: "abc123", Link: "https://example.com", UserID: testUserID},
+			{ID: "def456", Link: "https://yandex.ru", UserID: testUserID},
+		}
+
+		mockRepo.On("FindUserLinks", ctx, testUserID).
+			Return(links, nil).
+			Once()
+
+		result, err := svc.GetUserURLs(ctx, testUserID)
+
+		assert.NoError(t, err)
+		assert.Len(t, result, 2)
+		assert.Equal(t, "https://example.com", result[0].OriginalURL)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("get user urls empty", func(t *testing.T) {
+		mockRepo := new(mocks.MockLinkRepository)
+		svc := service.InitService(mockRepo)
+
+		var emptyLinks []model.Link
+
+		mockRepo.On("FindUserLinks", ctx, testUserID).
+			Return(emptyLinks, nil).
+			Once()
+
+		result, err := svc.GetUserURLs(ctx, testUserID)
+
+		assert.NoError(t, err)
+		assert.Empty(t, result)
 		mockRepo.AssertExpectations(t)
 	})
 }

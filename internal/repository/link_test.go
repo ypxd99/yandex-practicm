@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/ypxd99/yandex-practicm/internal/repository"
 	"github.com/ypxd99/yandex-practicm/internal/repository/postgres"
@@ -22,6 +23,8 @@ func TestCreateAndFindLink(t *testing.T) {
 
 	testID := "test123"
 	testURL := "https://example.com"
+	testUserID := uuid.New()
+
 	var (
 		repo repository.LinkRepository
 		err  error
@@ -39,16 +42,26 @@ func TestCreateAndFindLink(t *testing.T) {
 	}
 	defer repo.Close()
 
-	createdLink, err := repo.CreateLink(ctx, testID, testURL)
+	createdLink, err := repo.CreateLink(ctx, testID, testURL, testUserID)
 	assert.NoError(t, err)
 	assert.Equal(t, testID, createdLink.ID)
 	assert.Equal(t, testURL, createdLink.Link)
+	assert.Equal(t, testUserID, createdLink.UserID)
 
 	foundLink, err := repo.FindLink(ctx, testID)
 	assert.NoError(t, err)
 	assert.Equal(t, testID, foundLink.ID)
 	assert.Equal(t, testURL, foundLink.Link)
+	assert.Equal(t, testUserID, foundLink.UserID)
 
 	_, err = repo.FindLink(ctx, "non-existent")
 	assert.Error(t, sql.ErrNoRows, err)
+
+	userLinks, err := repo.FindUserLinks(ctx, testUserID)
+	assert.NoError(t, err)
+	assert.GreaterOrEqual(t, len(userLinks), 1)
+
+	for _, link := range userLinks {
+		assert.Equal(t, testUserID, link.UserID)
+	}
 }
