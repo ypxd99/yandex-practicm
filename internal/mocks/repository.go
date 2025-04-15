@@ -39,6 +39,11 @@ func (m *MockLinkRepository) BatchCreate(ctx context.Context, links []model.Link
 	return args.Error(0)
 }
 
+func (m *MockLinkRepository) MarkDeletedURLs(ctx context.Context, ids []string, userID uuid.UUID) (int, error) {
+	args := m.Called(ctx, ids, userID)
+	return args.Int(0), args.Error(1)
+}
+
 func (m *MockLinkRepository) Close() error {
 	return nil
 }

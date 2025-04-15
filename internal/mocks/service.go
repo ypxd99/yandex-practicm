@@ -38,4 +38,9 @@ func (m *MockLinkService) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]
 	return args.Get(0).([]model.UserURLResponse), args.Error(1)
 }
 
+func (m *MockLinkService) DeleteURLs(ctx context.Context, ids []string, userID uuid.UUID) (int, error) {
+	args := m.Called(ctx, ids, userID)
+	return args.Int(0), args.Error(1)
+}
+
 var _ service.LinkService = (*MockLinkService)(nil)

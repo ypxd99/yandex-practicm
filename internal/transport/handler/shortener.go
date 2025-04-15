@@ -50,7 +50,11 @@ func (h *Handler) getLinkByID(c *gin.Context) {
 
 	resp, err := h.service.FindLink(c.Request.Context(), req)
 	if err != nil {
-		responseTextPlain(c, http.StatusInternalServerError, err, nil)
+		if errors.Is(err, service.ErrURLDeleted) {
+			responseTextPlain(c, http.StatusGone, err, nil)
+			return
+		}
+		responseTextPlain(c, http.StatusBadRequest, err, nil)
 		return
 	}
 
@@ -160,4 +164,36 @@ func (h *Handler) getUserURLs(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, urls)
+}
+
+func (h *Handler) deleteURLs(c *gin.Context) {
+	var (
+		err error
+		req model.DeleteRequest
+	)
+
+	err = c.ShouldBindJSON(&req)
+	if err != nil {
+		response(c, http.StatusBadRequest, err, nil)
+		return
+	}
+
+	if len(req) == 0 {
+		response(c, http.StatusBadRequest, errors.New("empty url list"), nil)
+		return
+	}
+
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		response(c, http.StatusUnauthorized, err, nil)
+		return
+	}
+
+	_, err = h.service.DeleteURLs(c.Request.Context(), req, userID)
+	if err != nil {
+		response(c, http.StatusInternalServerError, err, nil)
+		return
+	}
+
+	response(c, http.StatusAccepted, nil, nil)
 }

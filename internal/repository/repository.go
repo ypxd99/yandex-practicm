@@ -12,6 +12,7 @@ type LinkRepository interface {
 	FindLink(ctx context.Context, id string) (*model.Link, error)
 	FindUserLinks(ctx context.Context, userID uuid.UUID) ([]model.Link, error)
 	BatchCreate(ctx context.Context, links []model.Link) error
+	MarkDeletedURLs(ctx context.Context, ids []string, userID uuid.UUID) (int, error)
 	Status(ctx context.Context) (bool, error)
 	Close() error
 }

@@ -35,4 +35,5 @@ func (h *Handler) InitRoutes(r *gin.Engine) {
 	userAPI := rAPI.Group("/user")
 	userAPI.Use(middleware.RequireAuth())
 	userAPI.GET("/urls", h.getUserURLs)
+	userAPI.DELETE("/urls", h.deleteURLs)
 }

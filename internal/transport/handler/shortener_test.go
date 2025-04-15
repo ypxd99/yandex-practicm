@@ -113,7 +113,7 @@ func TestGetLinkByIDHandler(t *testing.T) {
 
 		router.ServeHTTP(resp, req)
 
-		assert.Equal(t, http.StatusInternalServerError, resp.Code)
+		assert.Equal(t, http.StatusBadRequest, resp.Code)
 		mockService.AssertExpectations(t)
 	})
 }
@@ -284,5 +284,59 @@ func TestGetUserURLsHandler(t *testing.T) {
 		assert.Equal(t, http.StatusNoContent, resp.Code)
 
 		mockService.AssertExpectations(t)
+	})
+}
+
+func TestDeleteURLsHandler(t *testing.T) {
+	cfg := util.GetConfig()
+	util.InitLogger(cfg.Logger)
+
+	t.Run("successful delete", func(t *testing.T) {
+		mockService := new(mocks.MockLinkService)
+		router := setupRouter(mockService)
+
+		input := []string{"abc123", "def456"}
+
+		mockService.On("DeleteURLs", mock.Anything, input, mock.AnythingOfType("uuid.UUID")).
+			Return(2, nil).
+			Once()
+
+		body, _ := json.Marshal(input)
+		req := httptest.NewRequest(http.MethodDelete, "/api/user/urls", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp := httptest.NewRecorder()
+		router.ServeHTTP(resp, req)
+
+		assert.Equal(t, http.StatusAccepted, resp.Code)
+
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("empty url list", func(t *testing.T) {
+		mockService := new(mocks.MockLinkService)
+		router := setupRouter(mockService)
+
+		body, _ := json.Marshal([]string{})
+		req := httptest.NewRequest(http.MethodDelete, "/api/user/urls", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp := httptest.NewRecorder()
+		router.ServeHTTP(resp, req)
+
+		assert.Equal(t, http.StatusBadRequest, resp.Code)
+	})
+
+	t.Run("invalid json", func(t *testing.T) {
+		mockService := new(mocks.MockLinkService)
+		router := setupRouter(mockService)
+
+		req := httptest.NewRequest(http.MethodDelete, "/api/user/urls", bytes.NewBufferString("invalid json"))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp := httptest.NewRecorder()
+		router.ServeHTTP(resp, req)
+
+		assert.Equal(t, http.StatusBadRequest, resp.Code)
 	})
 }

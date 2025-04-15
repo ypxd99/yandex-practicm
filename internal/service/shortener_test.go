@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -24,7 +25,7 @@ func TestShorterLink(t *testing.T) {
 		mockRepo := new(mocks.MockLinkRepository)
 		svc := service.InitService(mockRepo)
 
-		expected := &model.Link{ID: "abc123", Link: "https://example.com", UserID: testUserID}
+		expected := &model.Link{ID: "abc123", Link: "https://example.com", UserID: testUserID, IsDeleted: false}
 		mockRepo.On("CreateLink", ctx, mock.Anything, "https://example.com", testUserID).
 			Return(expected, nil).
 			Once()
@@ -65,7 +66,7 @@ func TestFindLink(t *testing.T) {
 		mockRepo := new(mocks.MockLinkRepository)
 		svc := service.InitService(mockRepo)
 
-		expected := &model.Link{ID: "abc123", Link: "https://example.com", UserID: testUserID}
+		expected := &model.Link{ID: "abc123", Link: "https://example.com", UserID: testUserID, IsDeleted: false}
 		mockRepo.On("FindLink", ctx, "abc123").
 			Return(expected, nil).
 			Once()
@@ -130,8 +131,8 @@ func TestGetUserURLs(t *testing.T) {
 		svc := service.InitService(mockRepo)
 
 		links := []model.Link{
-			{ID: "abc123", Link: "https://example.com", UserID: testUserID},
-			{ID: "def456", Link: "https://yandex.ru", UserID: testUserID},
+			{ID: "abc123", Link: "https://example.com", UserID: testUserID, IsDeleted: false},
+			{ID: "def456", Link: "https://yandex.ru", UserID: testUserID, IsDeleted: false},
 		}
 
 		mockRepo.On("FindUserLinks", ctx, testUserID).
@@ -161,5 +162,42 @@ func TestGetUserURLs(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Empty(t, result)
 		mockRepo.AssertExpectations(t)
+	})
+}
+
+func TestDeleteURLs(t *testing.T) {
+	cfg := util.GetConfig()
+	util.InitLogger(cfg.Logger)
+	ctx := context.Background()
+	testUserID := uuid.New()
+
+	t.Run("delete urls successful", func(t *testing.T) {
+		mockRepo := new(mocks.MockLinkRepository)
+		svc := service.InitService(mockRepo)
+
+		ids := []string{"abc123", "def456"}
+
+		mockRepo.On("MarkURLsAsDeleted", mock.AnythingOfType("*context.timerCtx"), ids, testUserID).
+			Return(2, nil).
+			Once()
+
+		count, err := svc.DeleteURLs(ctx, ids, testUserID)
+
+		assert.NoError(t, err)
+		assert.Equal(t, len(ids), count)
+		time.Sleep(100 * time.Millisecond)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("empty ids list", func(t *testing.T) {
+		mockRepo := new(mocks.MockLinkRepository)
+		svc := service.InitService(mockRepo)
+
+		var emptyIDs []string
+
+		count, err := svc.DeleteURLs(ctx, emptyIDs, testUserID)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 0, count)
 	})
 }

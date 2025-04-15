@@ -24,8 +24,9 @@ type LocalStorage struct {
 }
 
 type linkData struct {
-	URL    string
-	UserID uuid.UUID
+	URL       string
+	UserID    uuid.UUID
+	IsDeleted bool
 }
 
 type fileLinks struct {
@@ -33,6 +34,7 @@ type fileLinks struct {
 	ShortURL    string    `json:"short_url"`
 	OriginalURL string    `json:"original_url"`
 	UserID      uuid.UUID `json:"user_id"`
+	IsDeleted   bool      `json:"is_deleted"`
 }
 
 func InitStorage(filePath string) (*LocalStorage, error) {
@@ -59,8 +61,9 @@ func (s *LocalStorage) CreateLink(ctx context.Context, id, url string, userID uu
 	}
 
 	s.links[id] = linkData{
-		URL:    url,
-		UserID: userID,
+		URL:       url,
+		UserID:    userID,
+		IsDeleted: false,
 	}
 
 	if s.filePath != "" {
@@ -70,7 +73,7 @@ func (s *LocalStorage) CreateLink(ctx context.Context, id, url string, userID uu
 		}
 	}
 
-	return &model.Link{ID: id, Link: url, UserID: userID}, nil
+	return &model.Link{ID: id, Link: url, UserID: userID, IsDeleted: false}, nil
 }
 
 func (s *LocalStorage) FindLink(ctx context.Context, id string) (*model.Link, error) {
@@ -82,7 +85,7 @@ func (s *LocalStorage) FindLink(ctx context.Context, id string) (*model.Link, er
 		return nil, ErrNotFound
 	}
 
-	return &model.Link{ID: id, Link: data.URL, UserID: data.UserID}, nil
+	return &model.Link{ID: id, Link: data.URL, UserID: data.UserID, IsDeleted: data.IsDeleted}, nil
 }
 
 func (s *LocalStorage) FindUserLinks(ctx context.Context, userID uuid.UUID) ([]model.Link, error) {
@@ -91,11 +94,12 @@ func (s *LocalStorage) FindUserLinks(ctx context.Context, userID uuid.UUID) ([]m
 
 	var result []model.Link
 	for id, data := range s.links {
-		if data.UserID == userID {
+		if data.UserID == userID && !data.IsDeleted {
 			result = append(result, model.Link{
-				ID:     id,
-				Link:   data.URL,
-				UserID: userID,
+				ID:        id,
+				Link:      data.URL,
+				UserID:    userID,
+				IsDeleted: data.IsDeleted,
 			})
 		}
 	}
@@ -109,8 +113,9 @@ func (s *LocalStorage) BatchCreate(ctx context.Context, links []model.Link) erro
 
 	for _, link := range links {
 		s.links[link.ID] = linkData{
-			URL:    link.Link,
-			UserID: link.UserID,
+			URL:       link.Link,
+			UserID:    link.UserID,
+			IsDeleted: link.IsDeleted,
 		}
 	}
 
@@ -123,6 +128,29 @@ func (s *LocalStorage) BatchCreate(ctx context.Context, links []model.Link) erro
 		}
 	}
 	return nil
+}
+
+func (s *LocalStorage) MarkDeletedURLs(ctx context.Context, ids []string, userID uuid.UUID) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	count := 0
+	for _, id := range ids {
+		data, exists := s.links[id]
+		if exists && data.UserID == userID && !data.IsDeleted {
+			data.IsDeleted = true
+			s.links[id] = data
+			count++
+		}
+	}
+
+	if count > 0 && s.filePath != "" {
+		if err := s.writeToFile(); err != nil {
+			return 0, err
+		}
+	}
+
+	return count, nil
 }
 
 func (s *LocalStorage) Close() error {
@@ -167,8 +195,9 @@ func (s *LocalStorage) readFromFile() error {
 	defer s.mu.Unlock()
 	for _, link := range links {
 		s.links[link.ShortURL] = linkData{
-			URL:    link.OriginalURL,
-			UserID: link.UserID,
+			URL:       link.OriginalURL,
+			UserID:    link.UserID,
+			IsDeleted: link.IsDeleted,
 		}
 	}
 
@@ -189,6 +218,7 @@ func (s *LocalStorage) writeToFile() error {
 			ShortURL:    shortURL,
 			OriginalURL: data.URL,
 			UserID:      data.UserID,
+			IsDeleted:   data.IsDeleted,
 		})
 	}
 

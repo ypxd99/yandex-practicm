@@ -12,7 +12,7 @@ import (
 	"github.com/ypxd99/yandex-practicm/util"
 )
 
-const dbConnStr = "postgres://%s:%s@%s/%s?sslmode=disable"
+//const dbConnStr = "postgres://%s:%s@%s/%s?sslmode=disable"
 
 type Postgres struct {
 	db *bun.DB

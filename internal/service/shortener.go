@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -13,7 +14,10 @@ import (
 	"github.com/ypxd99/yandex-practicm/util"
 )
 
-var ErrURLExist = errors.New("url already exists")
+var (
+	ErrURLExist   = errors.New("url already exists")
+	ErrURLDeleted = errors.New("url is deleted")
+)
 
 func normalizeQuery(data string) string {
 	keyWords := util.GetConfig().Postgres.SQLKeyWords
@@ -73,6 +77,10 @@ func (s *Service) FindLink(ctx context.Context, req string) (string, error) {
 		return "", err
 	}
 
+	if link.IsDeleted {
+		return "", ErrURLDeleted
+	}
+
 	return link.Link, nil
 }
 
@@ -129,4 +137,20 @@ func (s *Service) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]model.Us
 	}
 
 	return result, nil
+}
+
+func (s *Service) DeleteURLs(ctx context.Context, ids []string, userID uuid.UUID) (int, error) {
+	go func() {
+		deleteCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		count, err := s.repo.MarkDeletedURLs(deleteCtx, ids, userID)
+		if err != nil {
+			util.GetLogger().Errorf("failed to mark URLs as deleted: %v", err)
+		} else {
+			util.GetLogger().Infof("marked %d URLs as deleted", count)
+		}
+	}()
+
+	return len(ids), nil
 }
