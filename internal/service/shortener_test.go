@@ -3,7 +3,6 @@ package service_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -177,15 +176,14 @@ func TestDeleteURLs(t *testing.T) {
 
 		ids := []string{"abc123", "def456"}
 
-		mockRepo.On("MarkDeletedURLs", mock.AnythingOfType("*context.timerCtx"), ids, testUserID).
+		mockRepo.On("MarkDeletedURLs", ctx, ids, testUserID).
 			Return(2, nil).
 			Once()
 
 		count, err := svc.DeleteURLs(ctx, ids, testUserID)
 
 		assert.NoError(t, err)
-		assert.Equal(t, len(ids), count)
-		time.Sleep(100 * time.Millisecond)
+		assert.Equal(t, 2, count)
 		mockRepo.AssertExpectations(t)
 	})
 
@@ -195,7 +193,7 @@ func TestDeleteURLs(t *testing.T) {
 
 		var emptyIDs []string
 
-		mockRepo.On("MarkDeletedURLs", mock.AnythingOfType("*context.timerCtx"), emptyIDs, testUserID).
+		mockRepo.On("MarkDeletedURLs", ctx, emptyIDs, testUserID).
 			Return(0, nil).
 			Once()
 
@@ -203,7 +201,23 @@ func TestDeleteURLs(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, 0, count)
-		time.Sleep(100 * time.Millisecond)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("repository error", func(t *testing.T) {
+		mockRepo := new(mocks.MockLinkRepository)
+		svc := service.InitService(mockRepo)
+
+		ids := []string{"abc123", "def456"}
+
+		mockRepo.On("MarkDeletedURLs", ctx, ids, testUserID).
+			Return(0, errors.New("db error")).
+			Once()
+
+		count, err := svc.DeleteURLs(ctx, ids, testUserID)
+
+		assert.Error(t, err)
+		assert.Equal(t, 0, count)
 		mockRepo.AssertExpectations(t)
 	})
 }

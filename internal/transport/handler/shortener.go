@@ -10,6 +10,7 @@ import (
 	"github.com/ypxd99/yandex-practicm/internal/model"
 	"github.com/ypxd99/yandex-practicm/internal/repository/middleware"
 	"github.com/ypxd99/yandex-practicm/internal/service"
+	"github.com/ypxd99/yandex-practicm/util"
 )
 
 func (h *Handler) shorterLink(c *gin.Context) {
@@ -189,10 +190,14 @@ func (h *Handler) deleteURLs(c *gin.Context) {
 		return
 	}
 
-	_, err = h.service.DeleteURLs(c.Request.Context(), req, userID)
+	count, err := h.service.DeleteURLs(c.Request.Context(), req, userID)
 	if err != nil {
 		response(c, http.StatusInternalServerError, err, nil)
 		return
+	}
+
+	if count > 0 {
+		util.GetLogger().Infof("successfully marked %d URLs as deleted", count)
 	}
 
 	response(c, http.StatusAccepted, nil, nil)

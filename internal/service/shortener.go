@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -140,17 +139,12 @@ func (s *Service) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]model.Us
 }
 
 func (s *Service) DeleteURLs(ctx context.Context, ids []string, userID uuid.UUID) (int, error) {
-	go func() {
-		deleteCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	count, err := s.repo.MarkDeletedURLs(ctx, ids, userID)
+	if err != nil {
+		util.GetLogger().Errorf("failed to mark URLs as deleted: %v", err)
+		return 0, err
+	}
 
-		count, err := s.repo.MarkDeletedURLs(deleteCtx, ids, userID)
-		if err != nil {
-			util.GetLogger().Errorf("failed to mark URLs as deleted: %v", err)
-		} else {
-			util.GetLogger().Infof("marked %d URLs as deleted", count)
-		}
-	}()
-
-	return len(ids), nil
+	util.GetLogger().Infof("marked %d URLs as deleted", count)
+	return count, nil
 }
