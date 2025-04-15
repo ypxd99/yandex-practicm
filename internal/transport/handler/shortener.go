@@ -24,7 +24,7 @@ func (h *Handler) shorterLink(c *gin.Context) {
 	}
 	userID, err := middleware.GetUserID(c)
 	if err != nil {
-		responseTextPlain(c, http.StatusInternalServerError, err, nil)
+		responseTextPlain(c, http.StatusBadRequest, err, nil)
 		return
 	}
 
@@ -79,7 +79,7 @@ func (h *Handler) shorten(c *gin.Context) {
 
 	userID, err := middleware.GetUserID(c)
 	if err != nil {
-		response(c, http.StatusInternalServerError, err, model.ShortenResponse{Result: ""})
+		response(c, http.StatusBadRequest, err, model.ShortenResponse{Result: ""})
 		return
 	}
 
@@ -111,20 +111,20 @@ func (h *Handler) getStorageStatus(c *gin.Context) {
 }
 
 func (h *Handler) batchShorten(c *gin.Context) {
-    var (
+	var (
 		err error
 		req []model.BatchRequest
 	)
-    
-    err = c.ShouldBindJSON(&req)
+
+	err = c.ShouldBindJSON(&req)
 	if err != nil {
-        response(c, http.StatusBadRequest, err, nil)
-        return
-    }
-    if len(req) == 0 {
-        response(c, http.StatusBadRequest, errors.New("empty batch"), nil)
-        return
-    }
+		response(c, http.StatusBadRequest, err, nil)
+		return
+	}
+	if len(req) == 0 {
+		response(c, http.StatusBadRequest, errors.New("empty batch"), nil)
+		return
+	}
 
 	userID, err := middleware.GetUserID(c)
 	if err != nil {
