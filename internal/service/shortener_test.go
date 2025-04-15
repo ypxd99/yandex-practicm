@@ -177,7 +177,7 @@ func TestDeleteURLs(t *testing.T) {
 
 		ids := []string{"abc123", "def456"}
 
-		mockRepo.On("MarkURLsAsDeleted", mock.AnythingOfType("*context.timerCtx"), ids, testUserID).
+		mockRepo.On("MarkDeletedURLs", mock.AnythingOfType("*context.timerCtx"), ids, testUserID).
 			Return(2, nil).
 			Once()
 
