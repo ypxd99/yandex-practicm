@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/uptrace/bun"
 	"github.com/ypxd99/yandex-practicm/internal/model"
 )
 
@@ -92,7 +93,7 @@ func (p *Postgres) MarkDeletedURLs(ctx context.Context, ids []string, userID uui
 	result, err := p.db.NewUpdate().
 		Table("shortener.links").
 		Set("is_deleted = true").
-		Where("id IN (?) AND user_id = ? AND is_deleted = false", ids, userID).
+		Where("id IN (?) AND user_id = ? AND is_deleted = false", bun.In(ids), userID).
 		Exec(ctx)
 
 	if err != nil {
