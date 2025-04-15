@@ -30,3 +30,6 @@ Postgres:
   SQLKeyWords: ["DELETE", "DROP", "EXEC", "EXECUTE", "SELECT", "TRIM", "TRUNCATE"]
 FileStoragePath: store
 UseDecode: false
+Auth:
+  SecretKey: "my-secret-key"
+  CookieName: "user_id"
