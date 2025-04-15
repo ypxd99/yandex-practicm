@@ -195,9 +195,15 @@ func TestDeleteURLs(t *testing.T) {
 
 		var emptyIDs []string
 
+		mockRepo.On("MarkDeletedURLs", mock.AnythingOfType("*context.timerCtx"), emptyIDs, testUserID).
+			Return(0, nil).
+			Once()
+
 		count, err := svc.DeleteURLs(ctx, emptyIDs, testUserID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, 0, count)
+		time.Sleep(100 * time.Millisecond)
+		mockRepo.AssertExpectations(t)
 	})
 }
