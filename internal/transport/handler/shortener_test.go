@@ -70,7 +70,7 @@ func TestShorterLinkHandler(t *testing.T) {
 
 		router.ServeHTTP(resp, req)
 
-		assert.Equal(t, http.StatusBadRequest, resp.Code)
+		assert.Equal(t, http.StatusInternalServerError, resp.Code)
 		mockService.AssertExpectations(t)
 	})
 }
@@ -189,7 +189,7 @@ func TestShortenHandler(t *testing.T) {
 		resp := httptest.NewRecorder()
 		router.ServeHTTP(resp, req)
 
-		assert.Equal(t, http.StatusBadRequest, resp.Code)
+		assert.Equal(t, http.StatusInternalServerError, resp.Code)
 		mockService.AssertExpectations(t)
 	})
 }

@@ -24,7 +24,7 @@ func (h *Handler) shorterLink(c *gin.Context) {
 	}
 	userID, err := middleware.GetUserID(c)
 	if err != nil {
-		responseTextPlain(c, http.StatusBadRequest, err, nil)
+		responseTextPlain(c, http.StatusUnauthorized, err, nil)
 		return
 	}
 
@@ -79,7 +79,7 @@ func (h *Handler) shorten(c *gin.Context) {
 
 	userID, err := middleware.GetUserID(c)
 	if err != nil {
-		response(c, http.StatusBadRequest, err, model.ShortenResponse{Result: ""})
+		response(c, http.StatusUnauthorized, err, model.ShortenResponse{Result: ""})
 		return
 	}
 
@@ -128,7 +128,7 @@ func (h *Handler) batchShorten(c *gin.Context) {
 
 	userID, err := middleware.GetUserID(c)
 	if err != nil {
-		response(c, http.StatusInternalServerError, err, model.ShortenResponse{Result: ""})
+		response(c, http.StatusUnauthorized, err, model.ShortenResponse{Result: ""})
 		return
 	}
 
