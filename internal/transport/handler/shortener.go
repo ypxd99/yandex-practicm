@@ -8,7 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ypxd99/yandex-practicm/internal/model"
+	"github.com/ypxd99/yandex-practicm/internal/repository/middleware"
 	"github.com/ypxd99/yandex-practicm/internal/service"
+	"github.com/ypxd99/yandex-practicm/util"
 )
 
 func (h *Handler) shorterLink(c *gin.Context) {
@@ -21,8 +23,13 @@ func (h *Handler) shorterLink(c *gin.Context) {
 		responseTextPlain(c, http.StatusBadRequest, errors.New("empty data"), nil)
 		return
 	}
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		responseTextPlain(c, http.StatusUnauthorized, err, nil)
+		return
+	}
 
-	resp, err := h.service.ShorterLink(c.Request.Context(), string(body))
+	resp, err := h.service.ShorterLink(c.Request.Context(), string(body), userID)
 	if err != nil {
 		if errors.Is(err, service.ErrURLExist) {
 			responseTextPlain(c, http.StatusConflict, nil, []byte(resp))
@@ -44,7 +51,11 @@ func (h *Handler) getLinkByID(c *gin.Context) {
 
 	resp, err := h.service.FindLink(c.Request.Context(), req)
 	if err != nil {
-		responseTextPlain(c, http.StatusInternalServerError, err, nil)
+		if errors.Is(err, service.ErrURLDeleted) {
+			responseTextPlain(c, http.StatusGone, err, nil)
+			return
+		}
+		responseTextPlain(c, http.StatusBadRequest, err, nil)
 		return
 	}
 
@@ -71,7 +82,13 @@ func (h *Handler) shorten(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.service.ShorterLink(c.Request.Context(), req.URL)
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		response(c, http.StatusUnauthorized, err, model.ShortenResponse{Result: ""})
+		return
+	}
+
+	resp, err := h.service.ShorterLink(c.Request.Context(), req.URL, userID)
 	if err != nil {
 		if errors.Is(err, service.ErrURLExist) {
 			response(c, http.StatusConflict, nil, model.ShortenResponse{Result: resp})
@@ -98,28 +115,90 @@ func (h *Handler) getStorageStatus(c *gin.Context) {
 	response(c, http.StatusOK, nil, nil)
 }
 
-
 func (h *Handler) batchShorten(c *gin.Context) {
-    var (
+	var (
 		err error
 		req []model.BatchRequest
 	)
-    
-    err = c.ShouldBindJSON(&req)
+
+	err = c.ShouldBindJSON(&req)
 	if err != nil {
-        response(c, http.StatusBadRequest, err, nil)
-        return
-    }
-    if len(req) == 0 {
-        response(c, http.StatusBadRequest, errors.New("empty batch"), nil)
-        return
-    }
+		response(c, http.StatusBadRequest, err, nil)
+		return
+	}
+	if len(req) == 0 {
+		response(c, http.StatusBadRequest, errors.New("empty batch"), nil)
+		return
+	}
 
-    responses, err := h.service.BatchShorten(c.Request.Context(), req)
-    if err != nil {
-        response(c, http.StatusInternalServerError, err, nil)
-        return
-    }
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		response(c, http.StatusUnauthorized, err, model.ShortenResponse{Result: ""})
+		return
+	}
 
-    response(c, http.StatusCreated, nil, responses)
+	resp, err := h.service.BatchShorten(c.Request.Context(), req, userID)
+	if err != nil {
+		response(c, http.StatusInternalServerError, err, nil)
+		return
+	}
+
+	response(c, http.StatusCreated, nil, resp)
+}
+
+func (h *Handler) getUserURLs(c *gin.Context) {
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		responseTextPlain(c, http.StatusInternalServerError, err, nil)
+		return
+	}
+
+	urls, err := h.service.GetUserURLs(c.Request.Context(), userID)
+	if err != nil {
+		responseTextPlain(c, http.StatusInternalServerError, err, nil)
+		return
+	}
+
+	if len(urls) == 0 {
+		responseTextPlain(c, http.StatusNoContent, errors.New("no content"), nil)
+		return
+	}
+
+	c.JSON(http.StatusOK, urls)
+}
+
+func (h *Handler) deleteURLs(c *gin.Context) {
+	var (
+		err error
+		req model.DeleteRequest
+	)
+
+	err = c.ShouldBindJSON(&req)
+	if err != nil {
+		response(c, http.StatusBadRequest, err, nil)
+		return
+	}
+
+	if len(req) == 0 {
+		response(c, http.StatusBadRequest, errors.New("empty url list"), nil)
+		return
+	}
+
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		response(c, http.StatusUnauthorized, err, nil)
+		return
+	}
+
+	count, err := h.service.DeleteURLs(c.Request.Context(), req, userID)
+	if err != nil {
+		response(c, http.StatusInternalServerError, err, nil)
+		return
+	}
+
+	if count > 0 {
+		util.GetLogger().Infof("successfully marked %d URLs as deleted", count)
+	}
+
+	response(c, http.StatusAccepted, nil, nil)
 }

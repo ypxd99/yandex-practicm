@@ -24,6 +24,12 @@ type Config struct {
 	Postgres        Postgres  `yaml:"Postgres"`
 	FileStoragePath string    `yaml:"FileStoragePath"`
 	UseDecode       bool      `yaml:"UseDecode"`
+	Auth            Auth      `yaml:"Auth"`
+}
+
+type Auth struct {
+	SecretKey  string `yaml:"SecretKey"`
+	CookieName string `yaml:"CookieName"`
 }
 
 type Server struct {

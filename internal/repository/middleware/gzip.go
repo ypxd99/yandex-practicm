@@ -40,9 +40,9 @@ func GzipMiddleware() gin.HandlerFunc {
 
 		acceptsGzip := strings.Contains(c.Request.Header.Get("Accept-Encoding"), "gzip")
 		contentType := c.Writer.Header().Get("Content-Type")
-		if (strings.Contains(contentType, "application/json") || 
-				strings.Contains(contentType, "text/html")) &&
-				acceptsGzip {
+		if (strings.Contains(contentType, "application/json") ||
+			strings.Contains(contentType, "text/html")) &&
+			acceptsGzip {
 			wr.handleGzipResponse()
 			return
 		}

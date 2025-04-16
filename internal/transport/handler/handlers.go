@@ -22,10 +22,18 @@ func (h *Handler) InitRoutes(r *gin.Engine) {
 
 	r.Use(middleware.LoggingMiddleware())
 	r.Use(middleware.GzipMiddleware())
+	r.Use(middleware.AuthMiddleware())
+
 	r.POST("/", h.shorterLink)
 	r.GET("/:id", h.getLinkByID)
 	r.GET("/ping", h.getStorageStatus)
+
 	rAPI := r.Group("/api")
 	rAPI.POST("/shorten", h.shorten)
 	rAPI.POST("/shorten/batch", h.batchShorten)
+
+	userAPI := rAPI.Group("/user")
+	userAPI.Use(middleware.RequireAuth())
+	userAPI.GET("/urls", h.getUserURLs)
+	userAPI.DELETE("/urls", h.deleteURLs)
 }
