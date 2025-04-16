@@ -1,17 +1,20 @@
 package middleware
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
-	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/ypxd99/yandex-practicm/util"
 )
+
+type Claims struct {
+	UserID string `json:"user_id"`
+	jwt.RegisteredClaims
+}
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -22,14 +25,20 @@ func AuthMiddleware() gin.HandlerFunc {
 		cfg := util.GetConfig()
 		secretKey := []byte(cfg.Auth.SecretKey)
 
-		if err != nil || !isValidCookie(cookie, secretKey) {
+		if err != nil || !isValidToken(cookie, secretKey) {
 			newUserID := uuid.New()
 			userIDStr := newUserID.String()
-			signedUserID := signCookie(userIDStr, secretKey)
+
+			token, err := generateToken(userIDStr, secretKey)
+			if err != nil {
+				logger.Errorf("failed to generate token: %v", err)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
 
 			c.SetCookie(
 				cookieName,
-				signedUserID,
+				token,
 				3600*24*30,
 				"/",
 				"",
@@ -40,17 +49,49 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Set(cookieName, newUserID)
 			logger.Infof("created new user with ID: %s", userIDStr)
 		} else {
-			userIDStr := extractUserID(cookie)
+			userIDStr, err := extractUserIDFromToken(cookie, secretKey)
+			if err != nil {
+				newUserID := uuid.New()
+				userIDStr = newUserID.String()
+
+				token, err := generateToken(userIDStr, secretKey)
+				if err != nil {
+					logger.Errorf("failed to generate token: %v", err)
+					c.AbortWithStatus(http.StatusInternalServerError)
+					return
+				}
+
+				c.SetCookie(
+					cookieName,
+					token,
+					3600*24*30,
+					"/",
+					"",
+					false,
+					true,
+				)
+
+				c.Set(cookieName, newUserID)
+				logger.Infof("regenerated token for user, new ID: %s", userIDStr)
+				c.Next()
+				return
+			}
 
 			userID, err := uuid.Parse(userIDStr)
 			if err != nil {
 				userID = uuid.New()
 				userIDStr = userID.String()
-				signedUserID := signCookie(userIDStr, secretKey)
+
+				token, err := generateToken(userIDStr, secretKey)
+				if err != nil {
+					logger.Errorf("failed to generate token: %v", err)
+					c.AbortWithStatus(http.StatusInternalServerError)
+					return
+				}
 
 				c.SetCookie(
 					cookieName,
-					signedUserID,
+					token,
 					3600*24*30,
 					"/",
 					"",
@@ -69,47 +110,53 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func signCookie(userID string, key []byte) string {
-	h := hmac.New(sha256.New, key)
-	h.Write([]byte(userID))
-	signature := h.Sum(nil)
-	return userID + "." + hex.EncodeToString(signature)
-}
-
-func isValidCookie(cookie string, key []byte) bool {
-	if cookie == "" {
-		return false
+func generateToken(userID string, key []byte) (string, error) {
+	claims := &Claims{
+		UserID: userID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * 24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
 	}
 
-	parts := splitMax(cookie, ".", 2)
-	if len(parts) != 2 {
-		return false
-	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	userID, signatureHex := parts[0], parts[1]
-
-	if _, err := uuid.Parse(userID); err != nil {
-		return false
-	}
-
-	h := hmac.New(sha256.New, key)
-	h.Write([]byte(userID))
-	expectedSignature := h.Sum(nil)
-
-	signature, err := hex.DecodeString(signatureHex)
+	tokenString, err := token.SignedString(key)
 	if err != nil {
-		return false
+		return "", err
 	}
 
-	return hmac.Equal(signature, expectedSignature)
+	return tokenString, nil
 }
 
-func extractUserID(cookie string) string {
-	parts := splitMax(cookie, ".", 2)
-	if len(parts) != 2 {
-		return ""
+func isValidToken(tokenString string, key []byte) bool {
+	_, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return key, nil
+	})
+
+	return err == nil
+}
+
+func extractUserIDFromToken(tokenString string, key []byte) (string, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return key, nil
+	})
+
+	if err != nil {
+		return "", err
 	}
-	return parts[0]
+
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims.UserID, nil
+	}
+
+	return "", errors.New("invalid token claims")
 }
 
 func RequireAuth() gin.HandlerFunc {
@@ -138,13 +185,4 @@ func GetUserID(c *gin.Context) (uuid.UUID, error) {
 		return uuid.Nil, errors.New("user ID not found")
 	}
 	return userID.(uuid.UUID), nil
-}
-
-func splitMax(s, sep string, n int) []string {
-	if n <= 0 {
-		return []string{s}
-	}
-
-	parts := strings.SplitN(s, sep, n)
-	return parts
 }
