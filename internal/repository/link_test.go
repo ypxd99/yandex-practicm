@@ -2,14 +2,11 @@ package repository_test
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/ypxd99/yandex-practicm/internal/repository"
-	"github.com/ypxd99/yandex-practicm/internal/repository/postgres"
 	"github.com/ypxd99/yandex-practicm/internal/repository/storage"
 	"github.com/ypxd99/yandex-practicm/util"
 )
@@ -21,25 +18,14 @@ func TestCreateAndFindLink(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	testID := "test123"
+	// Генерируем уникальный ID для теста
+	testID := uuid.New().String()[:8]
 	testURL := "https://example.com"
 	testUserID := uuid.New()
 
-	var (
-		repo repository.LinkRepository
-		err  error
-	)
-	if cfg.Postgres.UsePostgres {
-		postgresRepo, err := postgres.Connect(context.Background())
-		assert.NoError(t, err)
-		repo = postgresRepo
-	} else {
-		repo, err = storage.InitStorage(cfg.FileStoragePath)
-		if err != nil {
-			util.GetLogger().Fatal(err)
-			return
-		}
-	}
+	// Инициализируем LocalStorage для тестов
+	repo, err := storage.InitStorage("")
+	assert.NoError(t, err)
 	defer repo.Close()
 
 	createdLink, err := repo.CreateLink(ctx, testID, testURL, testUserID)
@@ -55,7 +41,8 @@ func TestCreateAndFindLink(t *testing.T) {
 	assert.Equal(t, testUserID, foundLink.UserID)
 
 	_, err = repo.FindLink(ctx, "non-existent")
-	assert.Error(t, sql.ErrNoRows, err)
+	assert.Error(t, err)
+	assert.Equal(t, storage.ErrNotFound, err)
 
 	userLinks, err := repo.FindUserLinks(ctx, testUserID)
 	assert.NoError(t, err)

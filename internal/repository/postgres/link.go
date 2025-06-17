@@ -8,6 +8,9 @@ import (
 	"github.com/ypxd99/yandex-practicm/internal/model"
 )
 
+// CreateLink создает новую запись сокращенного URL в PostgreSQL.
+// Использует UPSERT для обработки дубликатов.
+// Возвращает созданную запись и ошибку, если операция не удалась.
 func (p *Postgres) CreateLink(ctx context.Context, id, link string, userID uuid.UUID) (*model.Link, error) {
 	var newLink model.Link
 
@@ -26,6 +29,8 @@ func (p *Postgres) CreateLink(ctx context.Context, id, link string, userID uuid.
 	return &newLink, nil
 }
 
+// FindLink находит запись сокращенного URL по его идентификатору в PostgreSQL.
+// Возвращает найденную запись и ошибку, если URL не найден.
 func (p *Postgres) FindLink(ctx context.Context, id string) (*model.Link, error) {
 	var (
 		link  model.Link
@@ -45,6 +50,8 @@ func (p *Postgres) FindLink(ctx context.Context, id string) (*model.Link, error)
 	return &link, err
 }
 
+// FindUserLinks возвращает все URL, созданные указанным пользователем в PostgreSQL.
+// Возвращает массив URL и ошибку, если операция не удалась.
 func (p *Postgres) FindUserLinks(ctx context.Context, userID uuid.UUID) ([]model.Link, error) {
 	var (
 		links []model.Link
@@ -64,6 +71,8 @@ func (p *Postgres) FindUserLinks(ctx context.Context, userID uuid.UUID) ([]model
 	return links, nil
 }
 
+// BatchCreate создает несколько записей сокращенных URL в PostgreSQL в рамках транзакции.
+// Возвращает ошибку, если операция не удалась.
 func (p *Postgres) BatchCreate(ctx context.Context, links []model.Link) error {
 	tx, err := p.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -85,6 +94,9 @@ func (p *Postgres) BatchCreate(ctx context.Context, links []model.Link) error {
 	return tx.Commit()
 }
 
+// MarkDeletedURLs помечает указанные URL как удаленные в PostgreSQL.
+// Обновляет только URL, принадлежащие указанному пользователю.
+// Возвращает количество удаленных URL и ошибку, если операция не удалась.
 func (p *Postgres) MarkDeletedURLs(ctx context.Context, ids []string, userID uuid.UUID) (int, error) {
 	if len(ids) == 0 {
 		return 0, nil

@@ -14,26 +14,36 @@ import (
 )
 
 var (
-	onceRSA     sync.Once
-	rsaKey      *RSA
-	publicPath  = "public.pem"
+	// onceRSA используется для инициализации RSA только один раз (паттерн singleton)
+	onceRSA sync.Once
+	// rsaKey хранит глобальный экземпляр RSA
+	rsaKey *RSA
+	// publicPath путь к публичному ключу
+	publicPath = "public.pem"
+	// privatePath путь к приватному ключу
 	privatePath = "private.pem"
 )
 
+// RSAEncryptor определяет интерфейс для шифрования и дешифрования данных с помощью RSA.
 type RSAEncryptor interface {
+	// Encrypt шифрует данные
 	Encrypt(data []byte) ([]byte, error)
+	// Decrypt дешифрует данные
 	Decrypt(data []byte) ([]byte, error)
 }
 
+// RSA реализует методы для работы с RSA-ключами.
 type RSA struct {
-	privateKey *rsa.PrivateKey
-	publicKey  *rsa.PublicKey
+	privateKey *rsa.PrivateKey // Приватный ключ
+	publicKey  *rsa.PublicKey  // Публичный ключ
 }
 
+// Encrypt шифрует данные с помощью публичного ключа RSA.
 func (r *RSA) Encrypt(data []byte) ([]byte, error) {
 	return rsa.EncryptOAEP(sha256.New(), rand.Reader, r.publicKey, data, nil)
 }
 
+// Decrypt дешифрует данные с помощью приватного ключа RSA.
 func (r *RSA) Decrypt(data []byte) ([]byte, error) {
 	return rsa.DecryptOAEP(sha256.New(), rand.Reader, r.privateKey, data, nil)
 }
@@ -70,6 +80,8 @@ func loadPrivateKey(path string) (*rsa.PrivateKey, error) {
 	return priv, nil
 }
 
+// GetRSA возвращает глобальный экземпляр RSA, инициализируя его при первом вызове.
+// Загружает приватный и публичный ключи из файлов.
 func GetRSA() *RSA {
 	onceRSA.Do(func() {
 		privKey, err := loadPrivateKey(privatePath)
@@ -95,6 +107,7 @@ func GetRSA() *RSA {
 	return rsaKey
 }
 
+// GenerateRSA генерирует новую пару RSA-ключей и сохраняет их в файлы.
 func GenerateRSA() {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {

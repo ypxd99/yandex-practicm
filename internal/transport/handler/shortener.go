@@ -13,6 +13,15 @@ import (
 	"github.com/ypxd99/yandex-practicm/util"
 )
 
+// shorterLink обрабатывает POST-запрос для сокращения URL.
+// Принимает URL в теле запроса в виде текста.
+// Возвращает сокращенный URL в теле ответа.
+// Статусы ответа:
+// - 201: URL успешно сокращен
+// - 400: Неверный формат запроса
+// - 401: Пользователь не авторизован
+// - 409: URL уже существует
+// - 500: Внутренняя ошибка сервера
 func (h *Handler) shorterLink(c *gin.Context) {
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -42,6 +51,14 @@ func (h *Handler) shorterLink(c *gin.Context) {
 	responseTextPlain(c, http.StatusCreated, nil, []byte(resp))
 }
 
+// getLinkByID обрабатывает GET-запрос для получения оригинального URL по его сокращенному идентификатору.
+// Принимает идентификатор в параметре пути.
+// Выполняет редирект на оригинальный URL.
+// Статусы ответа:
+// - 307: Редирект на оригинальный URL
+// - 400: Неверный формат запроса
+// - 410: URL был удален
+// - 500: Внутренняя ошибка сервера
 func (h *Handler) getLinkByID(c *gin.Context) {
 	req := c.Param("id")
 	if req == "" {
@@ -62,6 +79,15 @@ func (h *Handler) getLinkByID(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, resp)
 }
 
+// shorten обрабатывает POST-запрос для сокращения URL через API.
+// Принимает JSON с полем "url".
+// Возвращает JSON с полем "result", содержащим сокращенный URL.
+// Статусы ответа:
+// - 201: URL успешно сокращен
+// - 400: Неверный формат запроса
+// - 401: Пользователь не авторизован
+// - 409: URL уже существует
+// - 500: Внутренняя ошибка сервера
 func (h *Handler) shorten(c *gin.Context) {
 	var (
 		err error
@@ -101,6 +127,11 @@ func (h *Handler) shorten(c *gin.Context) {
 	response(c, http.StatusCreated, nil, model.ShortenResponse{Result: resp})
 }
 
+// getStorageStatus обрабатывает GET-запрос для проверки состояния хранилища.
+// Возвращает статус доступности хранилища.
+// Статусы ответа:
+// - 200: Хранилище доступно
+// - 500: Хранилище недоступно
 func (h *Handler) getStorageStatus(c *gin.Context) {
 	status, err := h.service.StorageStatus(c.Request.Context())
 	if err != nil {
@@ -115,6 +146,14 @@ func (h *Handler) getStorageStatus(c *gin.Context) {
 	response(c, http.StatusOK, nil, nil)
 }
 
+// batchShorten обрабатывает POST-запрос для пакетного сокращения URL.
+// Принимает массив JSON-объектов с полями "correlation_id" и "original_url".
+// Возвращает массив JSON-объектов с полями "correlation_id" и "short_url".
+// Статусы ответа:
+// - 201: URLs успешно сокращены
+// - 400: Неверный формат запроса
+// - 401: Пользователь не авторизован
+// - 500: Внутренняя ошибка сервера
 func (h *Handler) batchShorten(c *gin.Context) {
 	var (
 		err error
@@ -146,6 +185,13 @@ func (h *Handler) batchShorten(c *gin.Context) {
 	response(c, http.StatusCreated, nil, resp)
 }
 
+// getUserURLs обрабатывает GET-запрос для получения списка URL пользователя.
+// Возвращает массив JSON-объектов с полями "short_url" и "original_url".
+// Статусы ответа:
+// - 200: Список URL успешно получен
+// - 204: У пользователя нет сохраненных URL
+// - 401: Пользователь не авторизован
+// - 500: Внутренняя ошибка сервера
 func (h *Handler) getUserURLs(c *gin.Context) {
 	userID, err := middleware.GetUserID(c)
 	if err != nil {
@@ -167,6 +213,14 @@ func (h *Handler) getUserURLs(c *gin.Context) {
 	c.JSON(http.StatusOK, urls)
 }
 
+// deleteURLs обрабатывает DELETE-запрос для удаления URL пользователя.
+// Принимает массив идентификаторов URL в теле запроса.
+// Выполняет мягкое удаление (помечает URL как удаленные).
+// Статусы ответа:
+// - 202: Запрос на удаление принят
+// - 400: Неверный формат запроса
+// - 401: Пользователь не авторизован
+// - 500: Внутренняя ошибка сервера
 func (h *Handler) deleteURLs(c *gin.Context) {
 	var (
 		err error

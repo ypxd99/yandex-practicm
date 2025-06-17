@@ -11,19 +11,29 @@ import (
 	"github.com/pkg/errors"
 )
 
+// responseWriter представляет обертку над gin.ResponseWriter для сжатия ответов.
+// Позволяет буферизировать ответ перед его отправкой.
 type responseWriter struct {
 	gin.ResponseWriter
 	buf *bytes.Buffer
 }
 
+// Write записывает данные в буфер.
+// Реализует интерфейс io.Writer.
 func (w *responseWriter) Write(b []byte) (int, error) {
 	return w.buf.Write(b)
 }
 
+// WriteHeader устанавливает HTTP статус код ответа.
+// Реализует интерфейс http.ResponseWriter.
 func (w *responseWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 }
 
+// GzipMiddleware создает middleware для сжатия HTTP запросов и ответов.
+// Поддерживает сжатие запросов с Content-Encoding: gzip.
+// Сжимает ответы, если клиент поддерживает gzip и тип контента подходит.
+// Возвращает gin.HandlerFunc.
 func GzipMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if strings.Contains(c.Request.Header.Get("Content-Encoding"), "gzip") {
@@ -51,6 +61,9 @@ func GzipMiddleware() gin.HandlerFunc {
 	}
 }
 
+// handleGzipRequest обрабатывает входящий запрос, сжатый с помощью gzip.
+// Распаковывает тело запроса и обновляет его содержимое.
+// В случае ошибки прерывает обработку запроса.
 func handleGzipRequest(c *gin.Context) {
 	gz, err := gzip.NewReader(c.Request.Body)
 	if err != nil {
@@ -61,7 +74,6 @@ func handleGzipRequest(c *gin.Context) {
 
 	body, err := io.ReadAll(gz)
 	if err != nil {
-
 		c.AbortWithStatusJSON(http.StatusBadRequest, errors.New("failed to read gzip body"))
 		return
 	}
@@ -70,6 +82,8 @@ func handleGzipRequest(c *gin.Context) {
 	c.Request.ContentLength = int64(len(body))
 }
 
+// handleGzipResponse сжимает ответ с помощью gzip.
+// Устанавливает соответствующие заголовки и записывает сжатые данные.
 func (w *responseWriter) handleGzipResponse() {
 	w.Header().Set("Content-Encoding", "gzip")
 	w.Header().Del("Content-Length")

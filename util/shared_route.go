@@ -7,9 +7,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+// UpdateRoutesReq представляет запрос на обновление маршрутов сервиса.
 type UpdateRoutesReq struct {
-	ServiceName string `json:"service_name"`
-	URL         string `json:"URL"`
+	ServiceName string `json:"service_name"` // Имя сервиса
+	URL         string `json:"URL"`          // URL сервиса
 }
 
 type route struct {
@@ -18,20 +19,22 @@ type route struct {
 	Handler string `json:"handler"`
 }
 
-type RoutesLog struct {
-	Routes map[string]bool `yaml:"Routes"`
-}
-
+// GetMetricsRoute добавляет маршрут для метрик Prometheus (/metrics).
+// Принимает gin.Engine для регистрации маршрута.
 func GetMetricsRoute(r *gin.Engine) {
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 }
 
+// GetHealthcheckRoute добавляет маршрут для проверки работоспособности (/healthcheck).
+// Принимает gin.Engine для регистрации маршрута.
 func GetHealthcheckRoute(r *gin.Engine) {
 	r.GET("/healthcheck", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})
 }
 
+// GetRouteList добавляет маршрут для получения списка всех маршрутов (/routes).
+// Принимает gin.Engine для регистрации маршрута.
 func GetRouteList(r *gin.Engine) {
 	r.GET("/routes", func(c *gin.Context) {
 		resp := make([]route, 0)
