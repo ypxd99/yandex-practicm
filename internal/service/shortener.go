@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -52,21 +51,28 @@ func (s *Service) generateShortID() (string, error) {
 }
 
 func (s *Service) ShorterLink(ctx context.Context, req string, userID uuid.UUID) (string, error) {
-	str := normalizeQuery(req)
 	id, err := s.generateShortID()
 	if err != nil {
 		return "", err
 	}
-	link, err := s.repo.CreateLink(ctx, id, str, userID)
+	link, err := s.repo.CreateLink(ctx, id, normalizeQuery(req), userID)
 	if err != nil {
 		return "", err
 	}
 
+	baseURL := util.GetConfig().Server.BaseURL
 	if link.ID != id {
-		return fmt.Sprintf("%s/%s", util.GetConfig().Server.BaseURL, link.ID), ErrURLExist
+		var res strings.Builder
+		res.WriteString(baseURL)
+		res.WriteString("/")
+		res.WriteString(link.ID)
+		return res.String(), ErrURLExist
 	}
-
-	return fmt.Sprintf("%s/%s", util.GetConfig().Server.BaseURL, link.ID), nil
+	var res strings.Builder
+	res.WriteString(baseURL)
+	res.WriteString("/")
+	res.WriteString(link.ID)
+	return res.String(), nil
 }
 
 func (s *Service) FindLink(ctx context.Context, req string) (string, error) {
@@ -88,25 +94,28 @@ func (s *Service) StorageStatus(ctx context.Context) (bool, error) {
 }
 
 func (s *Service) BatchShorten(ctx context.Context, batch []model.BatchRequest, userID uuid.UUID) ([]model.BatchResponse, error) {
-	resp := make([]model.BatchResponse, 0, len(batch))
-	links := make([]model.Link, 0, len(batch))
+	resp := make([]model.BatchResponse, len(batch))
+	links := make([]model.Link, len(batch))
+	baseURL := util.GetConfig().Server.BaseURL
 
-	for _, item := range batch {
+	for i, item := range batch {
 		shortURL, err := s.generateShortID()
 		if err != nil {
 			return nil, err
 		}
-
-		links = append(links, model.Link{
+		links[i] = model.Link{
 			ID:     shortURL,
 			Link:   item.OriginalURL,
 			UserID: userID,
-		})
-
-		resp = append(resp, model.BatchResponse{
+		}
+		var res strings.Builder
+		res.WriteString(baseURL)
+		res.WriteString("/")
+		res.WriteString(shortURL)
+		resp[i] = model.BatchResponse{
 			CorrelationID: item.CorrelationID,
-			ShortURL:      fmt.Sprintf("%s/%s", util.GetConfig().Server.BaseURL, shortURL),
-		})
+			ShortURL:      res.String(),
+		}
 	}
 
 	err := s.repo.BatchCreate(ctx, links)
@@ -127,12 +136,17 @@ func (s *Service) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]model.Us
 		return []model.UserURLResponse{}, nil
 	}
 
-	result := make([]model.UserURLResponse, 0, len(links))
-	for _, link := range links {
-		result = append(result, model.UserURLResponse{
-			ShortURL:    fmt.Sprintf("%s/%s", util.GetConfig().Server.BaseURL, link.ID),
+	result := make([]model.UserURLResponse, len(links))
+	baseURL := util.GetConfig().Server.BaseURL
+	for i, link := range links {
+		var res strings.Builder
+		res.WriteString(baseURL)
+		res.WriteString("/")
+		res.WriteString(link.ID)
+		result[i] = model.UserURLResponse{
+			ShortURL:    res.String(),
 			OriginalURL: link.Link,
-		})
+		}
 	}
 
 	return result, nil

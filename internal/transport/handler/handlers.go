@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"net/http"
+	_ "net/http/pprof"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ypxd99/yandex-practicm/internal/repository/middleware"
 	"github.com/ypxd99/yandex-practicm/internal/service"
@@ -16,6 +19,13 @@ func InitHandler(service service.LinkService) *Handler {
 }
 
 func (h *Handler) InitRoutes(r *gin.Engine) {
+	r.GET("/debug/pprof/", gin.WrapF(http.HandlerFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.DefaultServeMux.ServeHTTP(w, r)
+	}))))
+	r.GET("/debug/pprof/:profile", gin.WrapF(http.HandlerFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.DefaultServeMux.ServeHTTP(w, r)
+	}))))
+
 	util.GetMetricsRoute(r)
 	util.GetHealthcheckRoute(r)
 	util.GetRouteList(r)
