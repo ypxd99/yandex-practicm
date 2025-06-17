@@ -18,42 +18,47 @@ var (
 	cfgPath = "configuration/config.yaml"
 )
 
+// Config представляет конфигурацию приложения.
+// Содержит настройки для логирования, сервера, базы данных и аутентификации.
 type Config struct {
-	Logger          LoggerCfg `yaml:"Logger"`
-	Server          Server    `yaml:"Server"`
-	Postgres        Postgres  `yaml:"Postgres"`
-	FileStoragePath string    `yaml:"FileStoragePath"`
-	UseDecode       bool      `yaml:"UseDecode"`
-	Auth            Auth      `yaml:"Auth"`
+	Logger          LoggerCfg `yaml:"Logger"`          // Конфигурация логирования
+	Server          Server    `yaml:"Server"`          // Конфигурация сервера
+	Postgres        Postgres  `yaml:"Postgres"`        // Конфигурация PostgreSQL
+	FileStoragePath string    `yaml:"FileStoragePath"` // Путь к файловому хранилищу
+	UseDecode       bool      `yaml:"UseDecode"`       // Использовать декодирование для чувствительных данных
+	Auth            Auth      `yaml:"Auth"`            // Конфигурация аутентификации
 }
 
+// Auth содержит конфигурацию, связанную с аутентификацией.
 type Auth struct {
-	SecretKey  string `yaml:"SecretKey"`
-	CookieName string `yaml:"CookieName"`
+	SecretKey  string `yaml:"SecretKey"`  // Секретный ключ для подписи JWT
+	CookieName string `yaml:"CookieName"` // Имя cookie для аутентификации
 }
 
+// Server содержит конфигурацию HTTP-сервера.
 type Server struct {
-	ServerAddress string `yaml:"-"`
-	BaseURL       string `yaml:"-"`
-	Address       string `yaml:"Address"`
-	Port          uint   `yaml:"Port"`
-	RTimeout      int64  `yaml:"RTimeout"`
-	WTimeout      int64  `yaml:"WTimeout"`
+	ServerAddress string `yaml:"-"`        // Полный адрес сервера (вычисляется)
+	BaseURL       string `yaml:"-"`        // Базовый URL сервиса (вычисляется)
+	Address       string `yaml:"Address"`  // Адрес хоста сервера
+	Port          uint   `yaml:"Port"`     // Порт сервера
+	RTimeout      int64  `yaml:"RTimeout"` // Таймаут чтения в секундах
+	WTimeout      int64  `yaml:"WTimeout"` // Таймаут записи в секундах
 }
 
+// Postgres содержит конфигурацию базы данных PostgreSQL.
 type Postgres struct {
-	ConnString      string   `yaml:"-"`
-	DriverName      string   `yaml:"DriverName"`
-	Address         string   `yaml:"Address"`
-	DBName          string   `yaml:"DBName"`
-	User            string   `yaml:"User"`
-	Password        string   `yaml:"Password"`
-	MaxConn         int      `yaml:"MaxConn"`
-	MaxConnLifeTime int64    `yaml:"MaxConnLifeTime"`
-	Trace           bool     `yaml:"Trace"`
-	MakeMigration   bool     `yaml:"MakeMigration"`
-	UsePostgres     bool     `yaml:"UsePostgres"`
-	SQLKeyWords     []string `yaml:"SQLKeyWords"`
+	ConnString      string   `yaml:"-"`               // Строка подключения к БД (вычисляется)
+	DriverName      string   `yaml:"DriverName"`      // Имя драйвера БД
+	Address         string   `yaml:"Address"`         // Адрес хоста БД
+	DBName          string   `yaml:"DBName"`          // Имя базы данных
+	User            string   `yaml:"User"`            // Пользователь БД
+	Password        string   `yaml:"Password"`        // Пароль БД
+	MaxConn         int      `yaml:"MaxConn"`         // Максимальное количество соединений
+	MaxConnLifeTime int64    `yaml:"MaxConnLifeTime"` // Максимальное время жизни соединения в секундах
+	Trace           bool     `yaml:"Trace"`           // Включить трассировку SQL
+	MakeMigration   bool     `yaml:"MakeMigration"`   // Выполнять миграции БД
+	UsePostgres     bool     `yaml:"UsePostgres"`     // Использовать PostgreSQL
+	SQLKeyWords     []string `yaml:"SQLKeyWords"`     // Список SQL-ключевых слов для обработки
 }
 
 func decode(str string) (string, error) {

@@ -10,14 +10,26 @@ import (
 	"github.com/ypxd99/yandex-practicm/util"
 )
 
+// Handler представляет HTTP-обработчик сервиса сокращения URL.
+// Содержит бизнес-логику сервиса и предоставляет HTTP-эндпоинты
+// для операций сокращения URL.
 type Handler struct {
 	service service.LinkService
 }
 
+// InitHandler создает и возвращает новый экземпляр Handler с предоставленным сервисом.
+// Инициализирует обработчик с заданной реализацией LinkService.
 func InitHandler(service service.LinkService) *Handler {
 	return &Handler{service: service}
 }
 
+// InitRoutes настраивает все HTTP-маршруты для сервиса сокращения URL.
+// Настраивает middleware, аутентификацию и все API-эндпоинты.
+// Маршруты включают:
+// - Эндпоинты отладки для профилирования
+// - Эндпоинты метрик и проверки работоспособности
+// - Эндпоинты сокращения URL
+// - Эндпоинты управления URL пользователя
 func (h *Handler) InitRoutes(r *gin.Engine) {
 	r.GET("/debug/pprof/", gin.WrapF(http.HandlerFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.DefaultServeMux.ServeHTTP(w, r)
