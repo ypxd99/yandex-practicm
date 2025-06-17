@@ -2,18 +2,98 @@ package handler
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/ypxd99/yandex-practicm/internal/mocks"
 	"github.com/ypxd99/yandex-practicm/internal/model"
 	"github.com/ypxd99/yandex-practicm/internal/service"
+	"github.com/ypxd99/yandex-practicm/util"
+	"gopkg.in/yaml.v3"
 )
+
+var (
+	cfgPath = "configuration/config.yaml"
+)
+
+func parseConfig(st interface{}, cfgPath string) {
+	f, err := os.Open(cfgPath)
+	if err != nil {
+		log.Fatal(errors.WithMessage(err, "error occurred while opening cfg file"))
+	}
+
+	fi, err := f.Stat()
+	if err != nil {
+		log.Fatal(errors.WithMessage(err, "error occurred while getting file stats"))
+	}
+
+	data := make([]byte, fi.Size())
+	_, err = f.Read(data)
+	if err != nil {
+		log.Fatal(errors.WithMessage(err, "error occurred while reading data"))
+	}
+
+	err = yaml.Unmarshal(data, st)
+	if err != nil {
+		log.Fatal(errors.WithMessage(err, "error occurred while unmashaling data"))
+	}
+}
+
+func decode(str string) (string, error) {
+	data, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return "", errors.WithMessage(err, "error occurred while decoding string(base64)")
+	}
+	res, err := util.GetRSA().Decrypt(data)
+	if err != nil {
+		return "", errors.WithMessage(err, "error occurred while decoding string(RSA)")
+	}
+	return string(res), err
+}
+
+func decodeCFG(cfg *util.Config) error {
+	var err error
+	cfg.Postgres.Address, err = decode(cfg.Postgres.Address)
+	if err != nil {
+		return errors.WithMessage(err, "error occurred while decode address")
+	}
+	cfg.Postgres.User, err = decode(cfg.Postgres.User)
+	if err != nil {
+		return errors.WithMessage(err, "error occurred while decode user")
+	}
+	cfg.Postgres.Password, err = decode(cfg.Postgres.Password)
+	if err != nil {
+		return errors.WithMessage(err, "error occurred while decode password")
+	}
+
+	return nil
+}
+
+func init() {
+	var (
+		conf util.Config
+	)
+	parseConfig(&conf, cfgPath)
+	if conf.UseDecode {
+		decodeCFG(&conf)
+	}
+
+	conf.Server.ServerAddress = fmt.Sprintf("%s:%d", conf.Server.Address, conf.Server.Port)
+	conf.Server.BaseURL = fmt.Sprintf("http://%s:%d", conf.Server.Address, conf.Server.Port)
+	conf.Postgres.UsePostgres = false
+
+	util.InitLogger(conf.Logger)
+}
 
 func setupTestRouter() (*gin.Engine, *mocks.MockLinkRepository) {
 	gin.SetMode(gin.TestMode)
