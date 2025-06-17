@@ -15,8 +15,8 @@ import (
 // ErrNotFound ошибка, возникающая при попытке найти несуществующую ссылку
 // ErrStorageAccess ошибка, возникающая при проблемах с доступом к хранилищу
 var (
-	ErrIDExists = errors.New("ID already exists")
-	ErrNotFound = errors.New("link not found")
+	ErrIDExists      = errors.New("ID already exists")
+	ErrNotFound      = errors.New("link not found")
 	ErrStorageAccess = errors.New("storage access error")
 )
 

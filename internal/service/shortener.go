@@ -15,7 +15,7 @@ import (
 // ErrURLExist ошибка, возникающая при попытке создать уже существующий URL
 // ErrURLDeleted ошибка, возникающая при попытке получить доступ к удаленному URL
 var (
-	ErrURLExist = errors.New("url already exists")
+	ErrURLExist   = errors.New("url already exists")
 	ErrURLDeleted = errors.New("url is deleted")
 )
 
