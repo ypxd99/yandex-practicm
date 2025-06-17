@@ -19,19 +19,27 @@ var (
 
 type LocalStorage struct {
 	mu       sync.RWMutex
-	links    map[string]string
+	links    map[string]linkData
 	filePath string
 }
 
+type linkData struct {
+	URL       string
+	UserID    uuid.UUID
+	IsDeleted bool
+}
+
 type fileLinks struct {
-	UUID        string `json:"uuid"`
-	ShortURL    string `json:"short_url"`
-	OriginalURL string `json:"original_url"`
+	UUID        string    `json:"uuid"`
+	ShortURL    string    `json:"short_url"`
+	OriginalURL string    `json:"original_url"`
+	UserID      uuid.UUID `json:"user_id"`
+	IsDeleted   bool      `json:"is_deleted"`
 }
 
 func InitStorage(filePath string) (*LocalStorage, error) {
 	s := &LocalStorage{
-		links:    make(map[string]string),
+		links:    make(map[string]linkData),
 		filePath: filePath,
 	}
 
@@ -44,7 +52,7 @@ func InitStorage(filePath string) (*LocalStorage, error) {
 	return s, nil
 }
 
-func (s *LocalStorage) CreateLink(ctx context.Context, id, url string) (*model.Link, error) {
+func (s *LocalStorage) CreateLink(ctx context.Context, id, url string, userID uuid.UUID) (*model.Link, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -52,7 +60,11 @@ func (s *LocalStorage) CreateLink(ctx context.Context, id, url string) (*model.L
 		return nil, ErrIDExists
 	}
 
-	s.links[id] = url
+	s.links[id] = linkData{
+		URL:       url,
+		UserID:    userID,
+		IsDeleted: false,
+	}
 
 	if s.filePath != "" {
 		if err := s.writeToFile(); err != nil {
@@ -61,30 +73,53 @@ func (s *LocalStorage) CreateLink(ctx context.Context, id, url string) (*model.L
 		}
 	}
 
-	return &model.Link{ID: id, Link: url}, nil
+	return &model.Link{ID: id, Link: url, UserID: userID, IsDeleted: false}, nil
 }
 
 func (s *LocalStorage) FindLink(ctx context.Context, id string) (*model.Link, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	url, exists := s.links[id]
+	data, exists := s.links[id]
 	if !exists {
 		return nil, ErrNotFound
 	}
 
-	return &model.Link{ID: id, Link: url}, nil
+	return &model.Link{ID: id, Link: data.URL, UserID: data.UserID, IsDeleted: data.IsDeleted}, nil
+}
+
+func (s *LocalStorage) FindUserLinks(ctx context.Context, userID uuid.UUID) ([]model.Link, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var result []model.Link
+	for id, data := range s.links {
+		if data.UserID == userID && !data.IsDeleted {
+			result = append(result, model.Link{
+				ID:        id,
+				Link:      data.URL,
+				UserID:    userID,
+				IsDeleted: data.IsDeleted,
+			})
+		}
+	}
+
+	return result, nil
 }
 
 func (s *LocalStorage) BatchCreate(ctx context.Context, links []model.Link) error {
-    s.mu.Lock()
-    defer s.mu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-    for _, link := range links {
-        s.links[link.ID] = link.Link
-    }
+	for _, link := range links {
+		s.links[link.ID] = linkData{
+			URL:       link.Link,
+			UserID:    link.UserID,
+			IsDeleted: link.IsDeleted,
+		}
+	}
 
-    if s.filePath != "" {
+	if s.filePath != "" {
 		if err := s.writeToFile(); err != nil {
 			for _, link := range links {
 				delete(s.links, link.ID)
@@ -92,7 +127,30 @@ func (s *LocalStorage) BatchCreate(ctx context.Context, links []model.Link) erro
 			return err
 		}
 	}
-    return nil
+	return nil
+}
+
+func (s *LocalStorage) MarkDeletedURLs(ctx context.Context, ids []string, userID uuid.UUID) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	count := 0
+	for _, id := range ids {
+		data, exists := s.links[id]
+		if exists && data.UserID == userID && !data.IsDeleted {
+			data.IsDeleted = true
+			s.links[id] = data
+			count++
+		}
+	}
+
+	if count > 0 && s.filePath != "" {
+		if err := s.writeToFile(); err != nil {
+			return 0, err
+		}
+	}
+
+	return count, nil
 }
 
 func (s *LocalStorage) Close() error {
@@ -136,7 +194,11 @@ func (s *LocalStorage) readFromFile() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, link := range links {
-		s.links[link.ShortURL] = link.OriginalURL
+		s.links[link.ShortURL] = linkData{
+			URL:       link.OriginalURL,
+			UserID:    link.UserID,
+			IsDeleted: link.IsDeleted,
+		}
 	}
 
 	return nil
@@ -150,11 +212,13 @@ func (s *LocalStorage) writeToFile() error {
 	defer file.Close()
 
 	var links []fileLinks
-	for shortURL, originalURL := range s.links {
+	for shortURL, data := range s.links {
 		links = append(links, fileLinks{
 			UUID:        uuid.New().String(),
 			ShortURL:    shortURL,
-			OriginalURL: originalURL,
+			OriginalURL: data.URL,
+			UserID:      data.UserID,
+			IsDeleted:   data.IsDeleted,
 		})
 	}
 

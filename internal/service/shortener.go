@@ -7,12 +7,16 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/ypxd99/yandex-practicm/internal/model"
 	"github.com/ypxd99/yandex-practicm/util"
 )
 
-var ErrURLExist = errors.New("url already exists")
+var (
+	ErrURLExist   = errors.New("url already exists")
+	ErrURLDeleted = errors.New("url is deleted")
+)
 
 func normalizeQuery(data string) string {
 	keyWords := util.GetConfig().Postgres.SQLKeyWords
@@ -47,13 +51,13 @@ func (s *Service) generateShortID() (string, error) {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(b), "="), nil
 }
 
-func (s *Service) ShorterLink(ctx context.Context, req string) (string, error) {
+func (s *Service) ShorterLink(ctx context.Context, req string, userID uuid.UUID) (string, error) {
 	str := normalizeQuery(req)
 	id, err := s.generateShortID()
 	if err != nil {
 		return "", err
 	}
-	link, err := s.repo.CreateLink(ctx, id, str)
+	link, err := s.repo.CreateLink(ctx, id, str, userID)
 	if err != nil {
 		return "", err
 	}
@@ -72,6 +76,10 @@ func (s *Service) FindLink(ctx context.Context, req string) (string, error) {
 		return "", err
 	}
 
+	if link.IsDeleted {
+		return "", ErrURLDeleted
+	}
+
 	return link.Link, nil
 }
 
@@ -79,7 +87,7 @@ func (s *Service) StorageStatus(ctx context.Context) (bool, error) {
 	return s.repo.Status(ctx)
 }
 
-func (s *Service) BatchShorten(ctx context.Context, batch []model.BatchRequest) ([]model.BatchResponse, error) {
+func (s *Service) BatchShorten(ctx context.Context, batch []model.BatchRequest, userID uuid.UUID) ([]model.BatchResponse, error) {
 	resp := make([]model.BatchResponse, 0, len(batch))
 	links := make([]model.Link, 0, len(batch))
 
@@ -90,8 +98,9 @@ func (s *Service) BatchShorten(ctx context.Context, batch []model.BatchRequest) 
 		}
 
 		links = append(links, model.Link{
-			ID:   shortURL,
-			Link: item.OriginalURL,
+			ID:     shortURL,
+			Link:   item.OriginalURL,
+			UserID: userID,
 		})
 
 		resp = append(resp, model.BatchResponse{
@@ -106,4 +115,36 @@ func (s *Service) BatchShorten(ctx context.Context, batch []model.BatchRequest) 
 	}
 
 	return resp, nil
+}
+
+func (s *Service) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]model.UserURLResponse, error) {
+	links, err := s.repo.FindUserLinks(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(links) == 0 {
+		return []model.UserURLResponse{}, nil
+	}
+
+	result := make([]model.UserURLResponse, 0, len(links))
+	for _, link := range links {
+		result = append(result, model.UserURLResponse{
+			ShortURL:    fmt.Sprintf("%s/%s", util.GetConfig().Server.BaseURL, link.ID),
+			OriginalURL: link.Link,
+		})
+	}
+
+	return result, nil
+}
+
+func (s *Service) DeleteURLs(ctx context.Context, ids []string, userID uuid.UUID) (int, error) {
+	count, err := s.repo.MarkDeletedURLs(ctx, ids, userID)
+	if err != nil {
+		util.GetLogger().Errorf("failed to mark URLs as deleted: %v", err)
+		return 0, err
+	}
+
+	util.GetLogger().Infof("marked %d URLs as deleted", count)
+	return count, nil
 }
