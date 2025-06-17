@@ -13,10 +13,14 @@ import (
 )
 
 var (
-	ErrURLExist   = errors.New("url already exists")
+	// ErrURLExist ошибка, возникающая при попытке создать уже существующий URL
+	ErrURLExist = errors.New("url already exists")
+	// ErrURLDeleted ошибка, возникающая при попытке получить доступ к удаленному URL
 	ErrURLDeleted = errors.New("url is deleted")
 )
 
+// normalizeQuery нормализует запрос, удаляя SQL-ключевые слова.
+// Принимает строку запроса и возвращает нормализованную строку.
 func normalizeQuery(data string) string {
 	keyWords := util.GetConfig().Postgres.SQLKeyWords
 	res := ""
@@ -41,6 +45,8 @@ func normalizeQuery(data string) string {
 	return res
 }
 
+// generateShortID генерирует короткий идентификатор для URL.
+// Возвращает строку с идентификатором и ошибку, если генерация не удалась.
 func (s *Service) generateShortID() (string, error) {
 	b := make([]byte, 6)
 	_, err := rand.Read(b)
@@ -50,6 +56,9 @@ func (s *Service) generateShortID() (string, error) {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(b), "="), nil
 }
 
+// ShorterLink создает сокращенную версию URL.
+// Принимает контекст, оригинальный URL и идентификатор пользователя.
+// Возвращает сокращенный URL и ошибку, если операция не удалась.
 func (s *Service) ShorterLink(ctx context.Context, req string, userID uuid.UUID) (string, error) {
 	id, err := s.generateShortID()
 	if err != nil {
@@ -75,6 +84,9 @@ func (s *Service) ShorterLink(ctx context.Context, req string, userID uuid.UUID)
 	return res.String(), nil
 }
 
+// FindLink находит оригинальный URL по его сокращенной версии.
+// Принимает контекст и сокращенный URL.
+// Возвращает оригинальный URL и ошибку, если URL не найден или удален.
 func (s *Service) FindLink(ctx context.Context, req string) (string, error) {
 	str := normalizeQuery(req)
 	link, err := s.repo.FindLink(ctx, str)
@@ -89,10 +101,16 @@ func (s *Service) FindLink(ctx context.Context, req string) (string, error) {
 	return link.Link, nil
 }
 
+// StorageStatus проверяет доступность хранилища.
+// Принимает контекст.
+// Возвращает статус доступности и ошибку, если проверка не удалась.
 func (s *Service) StorageStatus(ctx context.Context) (bool, error) {
 	return s.repo.Status(ctx)
 }
 
+// BatchShorten создает сокращенные версии для нескольких URL.
+// Принимает контекст, массив запросов на сокращение и идентификатор пользователя.
+// Возвращает массив ответов с сокращенными URL и ошибку, если операция не удалась.
 func (s *Service) BatchShorten(ctx context.Context, batch []model.BatchRequest, userID uuid.UUID) ([]model.BatchResponse, error) {
 	resp := make([]model.BatchResponse, len(batch))
 	links := make([]model.Link, len(batch))
@@ -126,6 +144,9 @@ func (s *Service) BatchShorten(ctx context.Context, batch []model.BatchRequest, 
 	return resp, nil
 }
 
+// GetUserURLs возвращает все URL, созданные указанным пользователем.
+// Принимает контекст и идентификатор пользователя.
+// Возвращает массив URL и ошибку, если операция не удалась.
 func (s *Service) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]model.UserURLResponse, error) {
 	links, err := s.repo.FindUserLinks(ctx, userID)
 	if err != nil {
@@ -152,6 +173,9 @@ func (s *Service) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]model.Us
 	return result, nil
 }
 
+// DeleteURLs помечает указанные URL как удаленные.
+// Принимает контекст, массив идентификаторов URL и идентификатор пользователя.
+// Возвращает количество удаленных URL и ошибку, если операция не удалась.
 func (s *Service) DeleteURLs(ctx context.Context, ids []string, userID uuid.UUID) (int, error) {
 	count, err := s.repo.MarkDeletedURLs(ctx, ids, userID)
 	if err != nil {

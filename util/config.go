@@ -114,6 +114,9 @@ func decodeCFG(cfg *Config) error {
 	return nil
 }
 
+// GetConfig возвращает указатель на глобальную конфигурацию приложения.
+// Инициализирует конфигурацию при первом вызове, загружая данные из файла и переменных окружения.
+// Возвращает *Config.
 func GetConfig() *Config {
 	onceCFG.Do(func() {
 		var (

@@ -12,12 +12,15 @@ import (
 	"github.com/ypxd99/yandex-practicm/util"
 )
 
-//const dbConnStr = "postgres://%s:%s@%s/%s?sslmode=disable"
-
+// Postgres представляет структуру для работы с PostgreSQL.
+// Содержит соединение с базой данных.
 type Postgres struct {
 	db *bun.DB
 }
 
+// Connect устанавливает соединение с PostgreSQL.
+// Принимает контекст для управления временем жизни соединения.
+// Возвращает экземпляр Postgres и ошибку.
 func Connect(ctx context.Context) (*Postgres, error) {
 	cfg := util.GetConfig().Postgres
 	//connStr := fmt.Sprintf(dbConnStr, cfg.User, cfg.Password, cfg.Address, cfg.DBName)
@@ -36,10 +39,15 @@ func Connect(ctx context.Context) (*Postgres, error) {
 	return &Postgres{db: db}, db.PingContext(ctx)
 }
 
+// Close закрывает соединение с базой данных.
+// Возвращает ошибку в случае неудачи.
 func (p *Postgres) Close() error {
 	return p.db.Close()
 }
 
+// Status проверяет доступность базы данных.
+// Принимает контекст для управления временем жизни запроса.
+// Возвращает статус доступности и ошибку.
 func (p *Postgres) Status(ctx context.Context) (bool, error) {
 	err := p.db.PingContext(ctx)
 	if err != nil {
