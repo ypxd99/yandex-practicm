@@ -12,10 +12,10 @@ import (
 	"github.com/ypxd99/yandex-practicm/util"
 )
 
+// ErrURLExist ошибка, возникающая при попытке создать уже существующий URL
+// ErrURLDeleted ошибка, возникающая при попытке получить доступ к удаленному URL
 var (
-	// ErrURLExist ошибка, возникающая при попытке создать уже существующий URL
 	ErrURLExist = errors.New("url already exists")
-	// ErrURLDeleted ошибка, возникающая при попытке получить доступ к удаленному URL
 	ErrURLDeleted = errors.New("url is deleted")
 )
 

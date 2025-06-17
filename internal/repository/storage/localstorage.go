@@ -11,12 +11,12 @@ import (
 	"github.com/ypxd99/yandex-practicm/internal/model"
 )
 
+// ErrIDExists ошибка, возникающая при попытке создать ссылку с уже существующим ID
+// ErrNotFound ошибка, возникающая при попытке найти несуществующую ссылку
+// ErrStorageAccess ошибка, возникающая при проблемах с доступом к хранилищу
 var (
-	// ErrIDExists ошибка, возникающая при попытке создать ссылку с уже существующим ID
 	ErrIDExists = errors.New("ID already exists")
-	// ErrNotFound ошибка, возникающая при попытке найти несуществующую ссылку
 	ErrNotFound = errors.New("link not found")
-	// ErrStorageAccess ошибка, возникающая при проблемах с доступом к хранилищу
 	ErrStorageAccess = errors.New("storage access error")
 )
 
