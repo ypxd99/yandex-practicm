@@ -25,8 +25,8 @@ import (
 // buildCommit содержит хеш коммита, может быть переопределён через ldflags.
 var (
 	buildVersion string
-	buildDate string
-	buildCommit string
+	buildDate    string
+	buildCommit  string
 )
 
 func main() {
