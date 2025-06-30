@@ -22,7 +22,7 @@ import (
 func main() {
 	cfg := util.GetConfig()
 	util.InitLogger(cfg.Logger)
-	//go util.GenerateRSA()
+	// go util.GenerateRSA()
 	logger := util.GetLogger()
 	logger.Info("start shortener service")
 
@@ -35,15 +35,15 @@ func main() {
 		err  error
 	)
 	if cfg.Postgres.UsePostgres {
-		postgresRepo, err := postgres.Connect(context.Background())
+		repo, err = postgres.Connect(context.Background())
 		if err != nil {
-			logger.Fatalf("Failed to initialize Postgres: %v", err)
+			logger.Errorf("Failed to initialize Postgres: %v", err)
+			return
 		}
-		repo = postgresRepo
 	} else {
 		repo, err = storage.InitStorage(cfg.FileStoragePath)
 		if err != nil {
-			util.GetLogger().Fatal(err)
+			logger.Errorf("Failed to initialize Storage: %v", err)
 			return
 		}
 	}
@@ -59,38 +59,35 @@ func main() {
 	go func() {
 		util.GetLogger().Infof("SHORTENER server listeing at: %s", cfg.Server.ServerAddress)
 
-		err := srv.Run()
-		if !errors.Is(err, http.ErrServerClosed) {
-			util.GetLogger().Fatalf("error occurred while running http server: %s\n", err.Error())
+		if err := srv.Run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Errorf("error occurred while running http server: %s\n", err.Error())
 		}
 	}()
 
-	quit := make(chan os.Signal, 2)
+	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	<-quit
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Stop(ctx); err != nil {
-		util.GetLogger().Fatalf("Server forced to shutdown: %s", err.Error())
+		logger.Errorf("Server forced to shutdown: %s", err.Error())
 	}
-	util.GetLogger().Log(4, "HTTP SHORTENER service stopped")
+	logger.Info("HTTP SHORTENER service stopped")
 }
 
 func makeMegrations() {
 	// migrate UP
 	util.GetLogger().Info("start migrations")
-	err := postgres.MigrateDBUp(context.Background())
-	if err != nil {
+	if err := postgres.MigrateDBUp(context.Background()); err != nil {
 		util.GetLogger().Error(err)
 		return
 	}
 	util.GetLogger().Info("migrations up")
 
 	// migrate DOWN
-	//err = postgres.MigrateDBDown(context.Background())
-	//if err != nil {
+	// if err := postgres.MigrateDBDown(context.Background()); err != nil {
 	//	util.GetLogger().Error(err)
 	//	return
-	//}
+	// }
 }

@@ -21,44 +21,44 @@ var (
 // Config представляет конфигурацию приложения.
 // Содержит настройки для логирования, сервера, базы данных и аутентификации.
 type Config struct {
-	Logger          LoggerCfg `yaml:"Logger"`          // Конфигурация логирования
-	Server          Server    `yaml:"Server"`          // Конфигурация сервера
-	Postgres        Postgres  `yaml:"Postgres"`        // Конфигурация PostgreSQL
-	FileStoragePath string    `yaml:"FileStoragePath"` // Путь к файловому хранилищу
-	UseDecode       bool      `yaml:"UseDecode"`       // Использовать декодирование для чувствительных данных
-	Auth            Auth      `yaml:"Auth"`            // Конфигурация аутентификации
+	Logger          LoggerCfg `yaml:"Logger"`
+	Server          Server    `yaml:"Server"`
+	Postgres        Postgres  `yaml:"Postgres"`
+	Auth            Auth      `yaml:"Auth"`
+	FileStoragePath string    `yaml:"FileStoragePath"`
+	UseDecode       bool      `yaml:"UseDecode"`
 }
 
 // Auth содержит конфигурацию, связанную с аутентификацией.
 type Auth struct {
-	SecretKey  string `yaml:"SecretKey"`  // Секретный ключ для подписи JWT
-	CookieName string `yaml:"CookieName"` // Имя cookie для аутентификации
+	SecretKey  string `yaml:"SecretKey"`
+	CookieName string `yaml:"CookieName"`
 }
 
 // Server содержит конфигурацию HTTP-сервера.
 type Server struct {
-	ServerAddress string `yaml:"-"`        // Полный адрес сервера (вычисляется)
-	BaseURL       string `yaml:"-"`        // Базовый URL сервиса (вычисляется)
-	Address       string `yaml:"Address"`  // Адрес хоста сервера
-	Port          uint   `yaml:"Port"`     // Порт сервера
-	RTimeout      int64  `yaml:"RTimeout"` // Таймаут чтения в секундах
-	WTimeout      int64  `yaml:"WTimeout"` // Таймаут записи в секундах
+	ServerAddress string `yaml:"-"`
+	BaseURL       string `yaml:"-"`
+	Address       string `yaml:"Address"`
+	RTimeout      int64  `yaml:"RTimeout"`
+	WTimeout      int64  `yaml:"WTimeout"`
+	Port          uint   `yaml:"Port"`
 }
 
 // Postgres содержит конфигурацию базы данных PostgreSQL.
 type Postgres struct {
-	ConnString      string   `yaml:"-"`               // Строка подключения к БД (вычисляется)
-	DriverName      string   `yaml:"DriverName"`      // Имя драйвера БД
-	Address         string   `yaml:"Address"`         // Адрес хоста БД
-	DBName          string   `yaml:"DBName"`          // Имя базы данных
-	User            string   `yaml:"User"`            // Пользователь БД
-	Password        string   `yaml:"Password"`        // Пароль БД
-	MaxConn         int      `yaml:"MaxConn"`         // Максимальное количество соединений
-	MaxConnLifeTime int64    `yaml:"MaxConnLifeTime"` // Максимальное время жизни соединения в секундах
-	Trace           bool     `yaml:"Trace"`           // Включить трассировку SQL
-	MakeMigration   bool     `yaml:"MakeMigration"`   // Выполнять миграции БД
-	UsePostgres     bool     `yaml:"UsePostgres"`     // Использовать PostgreSQL
-	SQLKeyWords     []string `yaml:"SQLKeyWords"`     // Список SQL-ключевых слов для обработки
+	Trace           bool     `yaml:"Trace"`
+	MakeMigration   bool     `yaml:"MakeMigration"`
+	UsePostgres     bool     `yaml:"UsePostgres"`
+	SQLKeyWords     []string `yaml:"SQLKeyWords"`
+	ConnString      string   `yaml:"-"`
+	DriverName      string   `yaml:"DriverName"`
+	Address         string   `yaml:"Address"`
+	DBName          string   `yaml:"DBName"`
+	User            string   `yaml:"User"`
+	Password        string   `yaml:"Password"`
+	MaxConnLifeTime int64    `yaml:"MaxConnLifeTime"`
+	MaxConn         int      `yaml:"MaxConn"`
 }
 
 func decode(str string) (string, error) {
@@ -130,7 +130,7 @@ func GetConfig() *Config {
 		flag.StringVar(&conf.Server.ServerAddress, "a", fmt.Sprintf("%s:%d", conf.Server.Address, conf.Server.Port), "HTTP server address")
 		flag.StringVar(&conf.Server.BaseURL, "b", fmt.Sprintf("http://%s:%d", conf.Server.Address, conf.Server.Port), "Base URL for short links")
 		flag.StringVar(&conf.FileStoragePath, "f", conf.FileStoragePath, "Path to file storage")
-		//flag.StringVar(&conf.Postgres.ConnString, "d", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", conf.Postgres.User, conf.Postgres.Password, conf.Postgres.Address, conf.Postgres.DBName), "Database connect string")
+		// flag.StringVar(&conf.Postgres.ConnString, "d", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", conf.Postgres.User, conf.Postgres.Password, conf.Postgres.Address, conf.Postgres.DBName), "Database connect string")
 		flag.StringVar(&conf.Postgres.ConnString, "d", "", "Database connect string")
 		flag.Parse()
 

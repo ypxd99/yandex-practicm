@@ -8,7 +8,6 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
-	"github.com/uptrace/bun/extra/bundebug"
 	"github.com/ypxd99/yandex-practicm/util"
 )
 
@@ -23,20 +22,21 @@ type Postgres struct {
 // Возвращает экземпляр Postgres и ошибку.
 func Connect(ctx context.Context) (*Postgres, error) {
 	cfg := util.GetConfig().Postgres
-	//connStr := fmt.Sprintf(dbConnStr, cfg.User, cfg.Password, cfg.Address, cfg.DBName)
+	// connStr := fmt.Sprintf(dbConnStr, cfg.User, cfg.Password, cfg.Address, cfg.DBName)
 
-	//sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(connStr)))
+	// sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(connStr)))
 	sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(cfg.ConnString)))
 	db := bun.NewDB(sqlDB, pgdialect.New())
 
-	if cfg.Trace {
-		db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+	err := db.Ping()
+	if err != nil {
+		return nil, err
 	}
 	db.DB.SetMaxOpenConns(cfg.MaxConn)
 	db.DB.SetConnMaxLifetime(time.Duration(cfg.MaxConnLifeTime) * time.Second)
 	db.Exec(`SET search_path TO shortener, public;`)
 
-	return &Postgres{db: db}, db.PingContext(ctx)
+	return &Postgres{db: db}, nil
 }
 
 // Close закрывает соединение с базой данных.

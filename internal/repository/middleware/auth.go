@@ -36,7 +36,8 @@ func AuthMiddleware() gin.HandlerFunc {
 			newUserID := uuid.New()
 			userIDStr := newUserID.String()
 
-			token, err := generateToken(userIDStr, secretKey)
+			var token string
+			token, err = generateToken(userIDStr, secretKey)
 			if err != nil {
 				logger.Errorf("failed to generate token: %v", err)
 				c.AbortWithStatus(http.StatusInternalServerError)
@@ -61,7 +62,8 @@ func AuthMiddleware() gin.HandlerFunc {
 				newUserID := uuid.New()
 				userIDStr = newUserID.String()
 
-				token, err := generateToken(userIDStr, secretKey)
+				var token string
+				token, err = generateToken(userIDStr, secretKey)
 				if err != nil {
 					logger.Errorf("failed to generate token: %v", err)
 					c.AbortWithStatus(http.StatusInternalServerError)
@@ -84,12 +86,14 @@ func AuthMiddleware() gin.HandlerFunc {
 				return
 			}
 
-			userID, err := uuid.Parse(userIDStr)
+			var userID uuid.UUID
+			userID, err = uuid.Parse(userIDStr)
 			if err != nil {
 				userID = uuid.New()
 				userIDStr = userID.String()
 
-				token, err := generateToken(userIDStr, secretKey)
+				var token string
+				token, err = generateToken(userIDStr, secretKey)
 				if err != nil {
 					logger.Errorf("failed to generate token: %v", err)
 					c.AbortWithStatus(http.StatusInternalServerError)
