@@ -11,11 +11,18 @@ import (
 	"github.com/ypxd99/yandex-practicm/util"
 )
 
+// Claims представляет структуру для хранения данных JWT токена.
+// Содержит идентификатор пользователя и стандартные поля JWT.
 type Claims struct {
+	// UserID идентификатор пользователя
 	UserID string `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
+// AuthMiddleware создает middleware для аутентификации пользователей.
+// Проверяет наличие и валидность JWT токена в cookie.
+// Если токен отсутствует или невалиден, создает нового пользователя.
+// Возвращает gin.HandlerFunc.
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cookieName := util.GetConfig().Auth.CookieName
@@ -110,6 +117,9 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
+// generateToken создает новый JWT токен для указанного пользователя.
+// Принимает идентификатор пользователя и секретный ключ.
+// Возвращает строку токена и ошибку.
 func generateToken(userID string, key []byte) (string, error) {
 	claims := &Claims{
 		UserID: userID,
@@ -129,6 +139,9 @@ func generateToken(userID string, key []byte) (string, error) {
 	return tokenString, nil
 }
 
+// isValidToken проверяет валидность JWT токена.
+// Принимает строку токена и секретный ключ.
+// Возвращает true, если токен валиден.
 func isValidToken(tokenString string, key []byte) bool {
 	_, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -140,6 +153,9 @@ func isValidToken(tokenString string, key []byte) bool {
 	return err == nil
 }
 
+// extractUserIDFromToken извлекает идентификатор пользователя из JWT токена.
+// Принимает строку токена и секретный ключ.
+// Возвращает идентификатор пользователя и ошибку.
 func extractUserIDFromToken(tokenString string, key []byte) (string, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -159,6 +175,9 @@ func extractUserIDFromToken(tokenString string, key []byte) (string, error) {
 	return "", errors.New("invalid token claims")
 }
 
+// RequireAuth создает middleware для проверки аутентификации пользователя.
+// Проверяет наличие и валидность идентификатора пользователя в контексте.
+// Возвращает gin.HandlerFunc.
 func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cookieName := util.GetConfig().Auth.CookieName
@@ -178,6 +197,9 @@ func RequireAuth() gin.HandlerFunc {
 	}
 }
 
+// GetUserID извлекает идентификатор пользователя из контекста.
+// Принимает контекст gin.
+// Возвращает UUID пользователя и ошибку.
 func GetUserID(c *gin.Context) (uuid.UUID, error) {
 	cookieName := util.GetConfig().Auth.CookieName
 	userID, exists := c.Get(cookieName)

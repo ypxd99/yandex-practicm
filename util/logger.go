@@ -7,12 +7,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// LoggerCfg представляет конфигурацию логгера.
+// Содержит уровень логирования, файл и системный журнал.
 type LoggerCfg struct {
 	Level  log.Level `yaml:"Level"`
 	File   LogFile   `yaml:"File"`
 	SysLog SysLog    `yaml:"Syslog"`
 }
 
+// LogFile представляет конфигурацию файла для логирования.
+// Содержит флаг включения, имя файла, максимальный размер файла, максимальное количество резервных копий и максимальный возраст файла.
 type LogFile struct {
 	Enabled    bool   `yaml:"Enabled"`
 	FileName   string `yaml:"FileName"`
@@ -21,6 +25,8 @@ type LogFile struct {
 	MaxAge     int    `yaml:"MaxAge"`
 }
 
+// SysLog представляет конфигурацию системного журнала.
+// Содержит флаг включения, адрес, сеть и тег.
 type SysLog struct {
 	Enabled bool   `yaml:"Enabled"`
 	Address string `yaml:"Address"`
@@ -28,8 +34,12 @@ type SysLog struct {
 	Tag     string `yaml:"Tag"`
 }
 
+// logger представляет глобальный экземпляр логгера logrus.
 var logger *log.Logger
 
+// InitLogger инициализирует глобальный экземпляр логгера logrus.
+// Принимает конфигурацию логгера.
+// Инициализирует логгер с указанными параметрами.
 func InitLogger(conf LoggerCfg) {
 	logger = &log.Logger{
 		Out:          os.Stdout,
@@ -71,6 +81,7 @@ func InitLogger(conf LoggerCfg) {
 	}
 }
 
+// GetLogger возвращает глобальный экземпляр логгера logrus.
 func GetLogger() *log.Logger {
 	return logger
 }
