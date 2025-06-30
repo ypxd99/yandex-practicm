@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,7 +20,20 @@ import (
 	"github.com/ypxd99/yandex-practicm/util"
 )
 
+// buildVersion содержит версию сборки, может быть переопределена через ldflags.
+// buildDate содержит дату сборки, может быть переопределена через ldflags.
+// buildCommit содержит хеш коммита, может быть переопределён через ldflags.
+var (
+	buildVersion string
+	buildDate string
+	buildCommit string
+)
+
 func main() {
+	fmt.Printf("Build version: %s\n", ifNA(buildVersion))
+	fmt.Printf("Build date: %s\n", ifNA(buildDate))
+	fmt.Printf("Build commit: %s\n", ifNA(buildCommit))
+
 	cfg := util.GetConfig()
 	util.InitLogger(cfg.Logger)
 	// go util.GenerateRSA()
@@ -90,4 +104,12 @@ func makeMegrations() {
 	//	util.GetLogger().Error(err)
 	//	return
 	// }
+}
+
+// ifNA возвращает значение или "N/A", если оно пустое.
+func ifNA(val string) string {
+	if val == "" {
+		return "N/A"
+	}
+	return val
 }
