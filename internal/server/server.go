@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -18,6 +19,13 @@ type Server struct {
 // Run запускает HTTP-сервер и начинает прослушивание запросов.
 // Возвращает ошибку, если сервер не удалось запустить.
 func (s *Server) Run() error {
+	cfg := util.GetConfig().Server
+	if cfg.EnableHTTPS {
+		if cfg.TLSCertPath == "" || cfg.TLSKeyPath == "" {
+			return errors.New("TLS enabled but cert or key path is empty")
+		}
+		return s.httpServer.ListenAndServeTLS(cfg.TLSCertPath, cfg.TLSKeyPath)
+	}
 	return s.httpServer.ListenAndServe()
 }
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -43,6 +44,9 @@ type Server struct {
 	RTimeout      int64  `yaml:"RTimeout"`
 	WTimeout      int64  `yaml:"WTimeout"`
 	Port          uint   `yaml:"Port"`
+	EnableHTTPS   bool   `yaml:"EnableHTTPS"`
+	TLSCertPath   string `yaml:"TLSCertPath"`
+	TLSKeyPath    string `yaml:"TLSKeyPath"`
 }
 
 // Postgres содержит конфигурацию базы данных PostgreSQL.
@@ -132,6 +136,9 @@ func GetConfig() *Config {
 		flag.StringVar(&conf.FileStoragePath, "f", conf.FileStoragePath, "Path to file storage")
 		// flag.StringVar(&conf.Postgres.ConnString, "d", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", conf.Postgres.User, conf.Postgres.Password, conf.Postgres.Address, conf.Postgres.DBName), "Database connect string")
 		flag.StringVar(&conf.Postgres.ConnString, "d", "", "Database connect string")
+		flag.BoolVar(&conf.Server.EnableHTTPS, "s", conf.Server.EnableHTTPS, "Enable HTTPS mode")
+		flag.StringVar(&conf.Server.TLSCertPath, "tls-cert", conf.Server.TLSCertPath, "Path to TLS certificate file")
+		flag.StringVar(&conf.Server.TLSKeyPath, "tls-key", conf.Server.TLSKeyPath, "Path to TLS key file")
 		flag.Parse()
 
 		if envAddr, exists := os.LookupEnv("SERVER_ADDRESS"); exists {
@@ -148,6 +155,18 @@ func GetConfig() *Config {
 
 		if envDB, exists := os.LookupEnv("DATABASE_DSN"); exists {
 			conf.Postgres.ConnString = envDB
+		}
+
+		if envEnableHTTPS, exists := os.LookupEnv("ENABLE_HTTPS"); exists {
+			if envEnableHTTPS == "1" || strings.ToLower(envEnableHTTPS) == "true" {
+				conf.Server.EnableHTTPS = true
+			}
+		}
+		if envCert, exists := os.LookupEnv("TLS_CERT_PATH"); exists {
+			conf.Server.TLSCertPath = envCert
+		}
+		if envKey, exists := os.LookupEnv("TLS_KEY_PATH"); exists {
+			conf.Server.TLSKeyPath = envKey
 		}
 
 		//TODO: remove this
