@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -24,7 +23,7 @@ var (
 // ConfigTask представляет конфигурацию приложения требуемое в задание.
 type ConfigTask struct {
 	ServerAddres    string `json:"server_address"`    // аналог переменной окружения SERVER_ADDRESS или флага -a
-	BaseURL         string `json"base_url"`           // аналог переменной окружения BASE_URL или флага -b
+	BaseURL         string `json:"base_url"`          // аналог переменной окружения BASE_URL или флага -b
 	FileStoragePath string `json:"file_storage_path"` // аналог переменной окружения FILE_STORAGE_PATH или флага -f
 	DatabaseDNS     string `json:"database_dsn"`      // аналог переменной окружения DATABASE_DSN или флага -d
 	EnableHTTPS     bool   `json:"enable_https"`      // аналог переменной окружения ENABLE_HTTPS или флага -s
@@ -112,7 +111,7 @@ func parseConfig(st interface{}, cfgPath string) {
 }
 
 func parseConfigTask(st interface{}, path string) error {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return errors.WithMessage(err, "error occurred while opening JSON config file")
 	}
@@ -146,9 +145,9 @@ func decodeCFG(cfg *Config) error {
 func GetConfig() *Config {
 	onceCFG.Do(func() {
 		var (
-			conf                                                 Config
-			configTask                                           ConfigTask
-			configPath                                           string
+			conf                                                              Config
+			configTask                                                        ConfigTask
+			configPath                                                        string
 			serverAddress, baseURL, fileStoragePath, databaseDNS, enableHTTPS string
 		)
 		parseConfig(&conf, cfgPath)
