@@ -2,8 +2,10 @@ package util
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -18,6 +20,15 @@ var (
 	config  *Config
 	cfgPath = "configuration/config.yaml"
 )
+
+// ConfigTask представляет конфигурацию приложения требуемое в задание.
+type ConfigTask struct {
+	ServerAddres    string `json:"server_address"`    // аналог переменной окружения SERVER_ADDRESS или флага -a
+	BaseURL         string `json"base_url"`           // аналог переменной окружения BASE_URL или флага -b
+	FileStoragePath string `json:"file_storage_path"` // аналог переменной окружения FILE_STORAGE_PATH или флага -f
+	DatabaseDNS     string `json:"database_dsn"`      // аналог переменной окружения DATABASE_DSN или флага -d
+	EnableHTTPS     bool   `json:"enable_https"`      // аналог переменной окружения ENABLE_HTTPS или флага -s
+}
 
 // Config представляет конфигурацию приложения.
 // Содержит настройки для логирования, сервера, базы данных и аутентификации.
@@ -100,6 +111,17 @@ func parseConfig(st interface{}, cfgPath string) {
 	}
 }
 
+func parseConfigTask(st interface{}, path string) error {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return errors.WithMessage(err, "error occurred while opening JSON config file")
+	}
+	if err := json.Unmarshal(data, st); err != nil {
+		return errors.WithMessage(err, "error occurred while unmarshaling JSON config")
+	}
+	return nil
+}
+
 func decodeCFG(cfg *Config) error {
 	var err error
 	cfg.Postgres.Address, err = decode(cfg.Postgres.Address)
@@ -124,47 +146,90 @@ func decodeCFG(cfg *Config) error {
 func GetConfig() *Config {
 	onceCFG.Do(func() {
 		var (
-			conf Config
+			conf                                                 Config
+			configTask                                           ConfigTask
+			configPath                                           string
+			serverAddress, baseURL, fileStoragePath, databaseDNS, enableHTTPS string
 		)
 		parseConfig(&conf, cfgPath)
 		if conf.UseDecode {
 			decodeCFG(&conf)
 		}
 
-		flag.StringVar(&conf.Server.ServerAddress, "a", fmt.Sprintf("%s:%d", conf.Server.Address, conf.Server.Port), "HTTP server address")
-		flag.StringVar(&conf.Server.BaseURL, "b", fmt.Sprintf("http://%s:%d", conf.Server.Address, conf.Server.Port), "Base URL for short links")
-		flag.StringVar(&conf.FileStoragePath, "f", conf.FileStoragePath, "Path to file storage")
+		flag.StringVar(&configPath, "c", "", "Path to JSON config file")
+		flag.StringVar(&configPath, "config", "", "Path to JSON config file (long)")
+		flag.StringVar(&serverAddress, "a", "", "HTTP server address")
+		flag.StringVar(&baseURL, "b", "", "Base URL for short links")
+		flag.StringVar(&fileStoragePath, "f", "", "Path to file storage")
 		// flag.StringVar(&conf.Postgres.ConnString, "d", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", conf.Postgres.User, conf.Postgres.Password, conf.Postgres.Address, conf.Postgres.DBName), "Database connect string")
-		flag.StringVar(&conf.Postgres.ConnString, "d", "", "Database connect string")
-		flag.BoolVar(&conf.Server.EnableHTTPS, "s", conf.Server.EnableHTTPS, "Enable HTTPS mode")
+		flag.StringVar(&databaseDNS, "d", "", "Database connect string")
+		flag.StringVar(&enableHTTPS, "s", "", "Enable HTTPS mode")
 		flag.StringVar(&conf.Server.TLSCertPath, "tls-cert", conf.Server.TLSCertPath, "Path to TLS certificate file")
 		flag.StringVar(&conf.Server.TLSKeyPath, "tls-key", conf.Server.TLSKeyPath, "Path to TLS key file")
 		flag.Parse()
 
+		if envConfig, exists := os.LookupEnv("CONFIG"); exists {
+			configPath = envConfig
+		}
+
+		if configPath != "" {
+			if err := parseConfigTask(&configTask, configPath); err != nil {
+				log.Println("error occurred while parsing config task", err)
+			}
+		}
+
 		if envAddr, exists := os.LookupEnv("SERVER_ADDRESS"); exists {
 			conf.Server.ServerAddress = envAddr
+		} else if serverAddress != "" {
+			conf.Server.ServerAddress = serverAddress
+		} else if configTask.ServerAddres != "" {
+			conf.Server.ServerAddress = configTask.ServerAddres
+		} else {
+			conf.Server.ServerAddress = fmt.Sprintf("%s:%d", conf.Server.Address, conf.Server.Port)
 		}
 
 		if envBaseURL, exists := os.LookupEnv("BASE_URL"); exists {
 			conf.Server.BaseURL = envBaseURL
+		} else if baseURL != "" {
+			conf.Server.BaseURL = baseURL
+		} else if configTask.BaseURL != "" {
+			conf.Server.BaseURL = configTask.BaseURL
+		} else {
+			conf.Server.BaseURL = fmt.Sprintf("http://%s:%d", conf.Server.Address, conf.Server.Port)
 		}
 
 		if envPath, exists := os.LookupEnv("FILE_STORAGE_PATH"); exists {
 			conf.FileStoragePath = envPath
+		} else if fileStoragePath != "" {
+			conf.FileStoragePath = fileStoragePath
+		} else if configTask.FileStoragePath != "" {
+			conf.FileStoragePath = configTask.FileStoragePath
 		}
 
 		if envDB, exists := os.LookupEnv("DATABASE_DSN"); exists {
 			conf.Postgres.ConnString = envDB
+		} else if databaseDNS != "" {
+			conf.Postgres.ConnString = databaseDNS
+		} else if configTask.DatabaseDNS != "" {
+			conf.Postgres.ConnString = configTask.DatabaseDNS
 		}
 
 		if envEnableHTTPS, exists := os.LookupEnv("ENABLE_HTTPS"); exists {
 			if envEnableHTTPS == "1" || strings.ToLower(envEnableHTTPS) == "true" {
 				conf.Server.EnableHTTPS = true
 			}
+		} else if enableHTTPS != "" {
+			if enableHTTPS == "1" || strings.ToLower(enableHTTPS) == "true" {
+				conf.Server.EnableHTTPS = true
+			}
+		} else if !configTask.EnableHTTPS {
+			conf.Server.EnableHTTPS = configTask.EnableHTTPS
 		}
+
 		if envCert, exists := os.LookupEnv("TLS_CERT_PATH"); exists {
 			conf.Server.TLSCertPath = envCert
 		}
+
 		if envKey, exists := os.LookupEnv("TLS_KEY_PATH"); exists {
 			conf.Server.TLSKeyPath = envKey
 		}
