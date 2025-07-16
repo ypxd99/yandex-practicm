@@ -94,7 +94,7 @@ func (h *Handler) shorten(c *gin.Context) {
 		req model.ShortenRequest
 	)
 
-	//err = c.ShouldBindJSON(&req)
+	// err = c.ShouldBindJSON(&req)
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		response(c, http.StatusBadRequest, err, model.ShortenResponse{Result: ""})

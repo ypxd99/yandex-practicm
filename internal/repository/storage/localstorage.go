@@ -23,9 +23,9 @@ var (
 // LocalStorage представляет локальное хранилище для сокращенных URL.
 // Использует файловую систему для персистентного хранения данных.
 type LocalStorage struct {
-	mu       sync.RWMutex
 	links    map[string]linkData
 	filePath string
+	mu       sync.RWMutex
 }
 
 // linkData представляет структуру данных для хранения информации об URL.

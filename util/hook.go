@@ -12,18 +12,18 @@ import (
 
 // RotateFileConfig содержит параметры для ротации лог-файлов.
 type RotateFileConfig struct {
-	Filename   string           // Имя файла для логирования
-	MaxSize    int              // Максимальный размер файла в мегабайтах
-	MaxBackups int              // Максимальное количество резервных копий
-	MaxAge     int              // Максимальный возраст файла в днях
-	Level      logrus.Level     // Уровень логирования
-	Formatter  logrus.Formatter // Форматтер для логов
+	Filename   string
+	Formatter  logrus.Formatter
+	MaxSize    int
+	MaxBackups int
+	MaxAge     int
+	Level      logrus.Level
 }
 
 // RotateFileHook реализует hook для logrus с поддержкой ротации файлов.
 type RotateFileHook struct {
-	Config    RotateFileConfig // Конфигурация ротации
-	logWriter io.Writer        // Объект для записи логов
+	logWriter io.Writer
+	Config    RotateFileConfig
 }
 
 var syslogLevelMap = map[logrus.Level]syslog.Priority{
