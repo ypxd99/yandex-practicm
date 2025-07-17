@@ -173,7 +173,7 @@ func GetConfig() *Config {
 
 		if configPath != "" {
 			if err := parseConfigTask(&configTask, configPath); err != nil {
-				log.Println("error occurred while parsing config task", err)
+				log.Fatalln("error occurred while parsing config task ", err)
 			}
 		}
 
