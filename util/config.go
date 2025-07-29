@@ -27,6 +27,7 @@ type ConfigTask struct {
 	FileStoragePath string `json:"file_storage_path"` // аналог переменной окружения FILE_STORAGE_PATH или флага -f
 	DatabaseDNS     string `json:"database_dsn"`      // аналог переменной окружения DATABASE_DSN или флага -d
 	EnableHTTPS     bool   `json:"enable_https"`      // аналог переменной окружения ENABLE_HTTPS или флага -s
+	TrustedSubnet   string `json:"trusted_subnet"`    // аналог переменной окружения TRUSTED_SUBNET или флага -t
 }
 
 // Config представляет конфигурацию приложения.
@@ -57,6 +58,8 @@ type Server struct {
 	EnableHTTPS   bool   `yaml:"EnableHTTPS"`
 	TLSCertPath   string `yaml:"TLSCertPath"`
 	TLSKeyPath    string `yaml:"TLSKeyPath"`
+	TrustedSubnet string `yaml:"TrustedSubnet"`
+	GRPCPort      uint   `yaml:"GRPCPort"`
 }
 
 // Postgres содержит конфигурацию базы данных PostgreSQL.
@@ -145,10 +148,10 @@ func decodeCFG(cfg *Config) error {
 func GetConfig() *Config {
 	onceCFG.Do(func() {
 		var (
-			conf                                                              Config
-			configTask                                                        ConfigTask
-			configPath                                                        string
-			serverAddress, baseURL, fileStoragePath, databaseDNS, enableHTTPS string
+			conf                                                                             Config
+			configTask                                                                       ConfigTask
+			configPath                                                                       string
+			serverAddress, baseURL, fileStoragePath, databaseDNS, enableHTTPS, trustedSubnet string
 		)
 		parseConfig(&conf, cfgPath)
 		if conf.UseDecode {
@@ -163,6 +166,7 @@ func GetConfig() *Config {
 		// flag.StringVar(&conf.Postgres.ConnString, "d", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", conf.Postgres.User, conf.Postgres.Password, conf.Postgres.Address, conf.Postgres.DBName), "Database connect string")
 		flag.StringVar(&databaseDNS, "d", "", "Database connect string")
 		flag.StringVar(&enableHTTPS, "s", "", "Enable HTTPS mode")
+		flag.StringVar(&trustedSubnet, "t", "", "Trusted subnet in CIDR notation")
 		flag.StringVar(&conf.Server.TLSCertPath, "tls-cert", conf.Server.TLSCertPath, "Path to TLS certificate file")
 		flag.StringVar(&conf.Server.TLSKeyPath, "tls-key", conf.Server.TLSKeyPath, "Path to TLS key file")
 		flag.Parse()
@@ -231,6 +235,14 @@ func GetConfig() *Config {
 
 		if envKey, exists := os.LookupEnv("TLS_KEY_PATH"); exists {
 			conf.Server.TLSKeyPath = envKey
+		}
+
+		if envTrustedSubnet, exists := os.LookupEnv("TRUSTED_SUBNET"); exists {
+			conf.Server.TrustedSubnet = envTrustedSubnet
+		} else if trustedSubnet != "" {
+			conf.Server.TrustedSubnet = trustedSubnet
+		} else if configTask.TrustedSubnet != "" {
+			conf.Server.TrustedSubnet = configTask.TrustedSubnet
 		}
 
 		//TODO: remove this

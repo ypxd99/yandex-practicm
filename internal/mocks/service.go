@@ -63,4 +63,12 @@ func (m *MockLinkService) DeleteURLs(ctx context.Context, ids []string, userID u
 	return args.Int(0), args.Error(1)
 }
 
+// GetStats возвращает статистику сервиса.
+// Принимает контекст.
+// Возвращает количество URL, количество пользователей и ошибку.
+func (m *MockLinkService) GetStats(ctx context.Context) (int64, int64, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(int64), args.Get(1).(int64), args.Error(2)
+}
+
 var _ service.LinkService = (*MockLinkService)(nil)

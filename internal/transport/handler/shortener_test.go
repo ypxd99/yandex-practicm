@@ -340,3 +340,52 @@ func TestDeleteURLsHandler(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, resp.Code)
 	})
 }
+
+func TestGetStatsHandler(t *testing.T) {
+	cfg := util.GetConfig()
+	util.InitLogger(cfg.Logger)
+
+	t.Run("successful request", func(t *testing.T) {
+		mockService := new(mocks.MockLinkService)
+		router := setupRouter(mockService)
+
+		expectedURLs := int64(100)
+		expectedUsers := int64(50)
+		mockService.On("GetStats", mock.Anything).
+			Return(expectedURLs, expectedUsers, nil).
+			Once()
+
+		req := httptest.NewRequest("GET", "/api/internal/stats", nil)
+		req.Header.Set("X-Real-IP", "192.168.1.1")
+		resp := httptest.NewRecorder()
+
+		router.ServeHTTP(resp, req)
+
+		assert.Equal(t, http.StatusOK, resp.Code)
+
+		var stats model.StatsResponse
+		err := json.Unmarshal(resp.Body.Bytes(), &stats)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedURLs, stats.URLs)
+		assert.Equal(t, expectedUsers, stats.Users)
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("service error", func(t *testing.T) {
+		mockService := new(mocks.MockLinkService)
+		router := setupRouter(mockService)
+
+		mockService.On("GetStats", mock.Anything).
+			Return(int64(0), int64(0), errors.New("service error")).
+			Once()
+
+		req := httptest.NewRequest("GET", "/api/internal/stats", nil)
+		req.Header.Set("X-Real-IP", "192.168.1.1")
+		resp := httptest.NewRecorder()
+
+		router.ServeHTTP(resp, req)
+
+		assert.Equal(t, http.StatusInternalServerError, resp.Code)
+		mockService.AssertExpectations(t)
+	})
+}

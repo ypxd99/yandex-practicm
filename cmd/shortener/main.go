@@ -15,6 +15,7 @@ import (
 	"github.com/ypxd99/yandex-practicm/internal/repository/storage"
 	"github.com/ypxd99/yandex-practicm/internal/server"
 	"github.com/ypxd99/yandex-practicm/internal/service"
+	"github.com/ypxd99/yandex-practicm/internal/transport/grpc"
 	"github.com/ypxd99/yandex-practicm/internal/transport/handler"
 	"github.com/ypxd99/yandex-practicm/util"
 )
@@ -38,7 +39,6 @@ func main() {
 
 	cfg := util.GetConfig()
 	util.InitLogger(cfg.Logger)
-	// go util.GenerateRSA()
 	logger := util.GetLogger()
 	logger.Info("start shortener service")
 
@@ -70,13 +70,21 @@ func main() {
 
 	router := gin.Default()
 	h.InitRoutes(router)
+	httpServer := server.NewServer(router)
 
-	srv := server.NewServer(router)
+	grpcServer := grpc.NewGRPCServer(service)
+
 	go func() {
-		util.GetLogger().Infof("SHORTENER server listeing at: %s", cfg.Server.ServerAddress)
+		util.GetLogger().Infof("HTTP server listening at: %s", cfg.Server.ServerAddress)
+		if err := httpServer.Run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Errorf("error occurred while running HTTP server: %s\n", err.Error())
+		}
+	}()
 
-		if err := srv.Run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Errorf("error occurred while running http server: %s\n", err.Error())
+	go func() {
+		util.GetLogger().Infof("gRPC server listening on port: %d", cfg.Server.GRPCPort)
+		if err := grpcServer.Run(); err != nil {
+			logger.Errorf("error occurred while running gRPC server: %s\n", err.Error())
 		}
 	}()
 
@@ -85,10 +93,16 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := srv.Stop(ctx); err != nil {
-		logger.Errorf("Server forced to shutdown: %s", err.Error())
+
+	if err := httpServer.Stop(ctx); err != nil {
+		logger.Errorf("HTTP server forced to shutdown: %s", err.Error())
 	}
-	logger.Info("HTTP SHORTENER service stopped")
+
+	if err := grpcServer.Stop(ctx); err != nil {
+		logger.Errorf("gRPC server forced to shutdown: %s", err.Error())
+	}
+
+	logger.Info("All servers stopped")
 }
 
 func makeMegrations() {
