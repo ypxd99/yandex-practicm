@@ -39,7 +39,6 @@ func main() {
 
 	cfg := util.GetConfig()
 	util.InitLogger(cfg.Logger)
-	// go util.GenerateRSA()
 	logger := util.GetLogger()
 	logger.Info("start shortener service")
 
