@@ -19,6 +19,8 @@ Server:
   EnableHTTPS: false
   TLSCertPath: ""
   TLSKeyPath: ""
+  TrustedSubnet: ""
+  GRPCPort: 9090
 Postgres:
   DriverName: "postgres"
   Address: "kO3SOLQFIjyhIX6bMZZhDKZ89Fn487+Hyt7Ulgv/PNoAXWZh1uYspUR1sbeZU3tCsa80T+gAvEAF/YxidAhj2+w2ITCGp26EKOhSzKl9af3Pq4r6dQ47wDiAa7ID9pvoy5HUbYiu4HlHGsR59laNnPzdx82klBbtG5OOvILe5kTFgJuDuoTuOGg4vsSEmSJE/mo89+ZHIcNIUkvWX7glpqgUDT2SSqgpFZSl97aOvG6HB0M1C71YpuAATXO3vTesGwuZkGXdjxWDzJaD/LR6mTxy6rkSLae/N9HeBaa4zuQtkYKssDRoVamg9c4Ze7vH4IH6atFDYpdTL3pYYEIF5Q=="

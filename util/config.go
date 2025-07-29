@@ -59,6 +59,7 @@ type Server struct {
 	TLSCertPath   string `yaml:"TLSCertPath"`
 	TLSKeyPath    string `yaml:"TLSKeyPath"`
 	TrustedSubnet string `yaml:"TrustedSubnet"`
+	GRPCPort      uint   `yaml:"GRPCPort"`
 }
 
 // Postgres содержит конфигурацию базы данных PostgreSQL.

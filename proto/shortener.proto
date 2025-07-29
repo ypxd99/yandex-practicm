@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package shortener;
+
+option go_package = "github.com/ypxd99/yandex-practicm/proto/shortener";
+
+// Сервис для сокращения URL
+service ShortenerService {
+  // Создание сокращенной ссылки (POST /)
+  rpc ShortenLink(ShortenLinkRequest) returns (ShortenLinkResponse);
+  
+  // Создание сокращенной ссылки через API (POST /api/shorten)
+  rpc Shorten(ShortenRequest) returns (ShortenResponse);
+  
+  // Получение оригинального URL по сокращенному (GET /:id)
+  rpc GetOriginalURL(GetOriginalURLRequest) returns (GetOriginalURLResponse);
+  
+  // Пакетное создание сокращенных ссылок (POST /api/shorten/batch)
+  rpc BatchShorten(BatchShortenRequest) returns (BatchShortenResponse);
+  
+  // Получение всех URL пользователя (GET /api/user/urls)
+  rpc GetUserURLs(GetUserURLsRequest) returns (GetUserURLsResponse);
+  
+  // Удаление URL пользователя (DELETE /api/user/urls)
+  rpc DeleteURLs(DeleteURLsRequest) returns (DeleteURLsResponse);
+  
+  // Проверка статуса хранилища (GET /ping)
+  rpc Ping(PingRequest) returns (PingResponse);
+  
+  // Получение статистики сервиса (GET /api/internal/stats)
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+}
+
+// Запрос на сокращение URL (POST /)
+message ShortenLinkRequest {
+  string url = 1;
+  string user_id = 2;
+}
+
+// Ответ с сокращенным URL (POST /)
+message ShortenLinkResponse {
+  string short_url = 1;
+  string error = 2;
+}
+
+// Запрос на сокращение URL через API (POST /api/shorten)
+message ShortenRequest {
+  string url = 1;
+  string user_id = 2;
+}
+
+// Ответ с сокращенным URL через API (POST /api/shorten)
+message ShortenResponse {
+  string short_url = 1;
+  string error = 2;
+}
+
+// Запрос на получение оригинального URL
+message GetOriginalURLRequest {
+  string short_id = 1;
+}
+
+// Ответ с оригинальным URL
+message GetOriginalURLResponse {
+  string original_url = 1;
+  string error = 2;
+}
+
+// Запрос на пакетное сокращение
+message BatchShortenRequest {
+  repeated BatchItem items = 1;
+  string user_id = 2;
+}
+
+// Элемент пакетного запроса
+message BatchItem {
+  string correlation_id = 1;
+  string original_url = 2;
+}
+
+// Ответ на пакетное сокращение
+message BatchShortenResponse {
+  repeated BatchResponseItem items = 1;
+  string error = 2;
+}
+
+// Элемент пакетного ответа
+message BatchResponseItem {
+  string correlation_id = 1;
+  string short_url = 2;
+}
+
+// Запрос на получение URL пользователя
+message GetUserURLsRequest {
+  string user_id = 1;
+}
+
+// Ответ с URL пользователя
+message GetUserURLsResponse {
+  repeated UserURLItem items = 1;
+  string error = 2;
+}
+
+// URL пользователя
+message UserURLItem {
+  string short_url = 1;
+  string original_url = 2;
+}
+
+// Запрос на удаление URL
+message DeleteURLsRequest {
+  repeated string short_ids = 1;
+  string user_id = 2;
+}
+
+// Ответ на удаление URL
+message DeleteURLsResponse {
+  int32 deleted_count = 1;
+  string error = 2;
+}
+
+// Запрос на проверку статуса
+message PingRequest {}
+
+// Ответ на проверку статуса
+message PingResponse {
+  bool status = 1;
+  string error = 2;
+}
+
+// Запрос на получение статистики
+message GetStatsRequest {}
+
+// Ответ со статистикой
+message GetStatsResponse {
+  int64 urls = 1;
+  int64 users = 2;
+  string error = 3;
+} 
