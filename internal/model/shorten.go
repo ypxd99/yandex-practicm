@@ -44,3 +44,11 @@ type UserURLResponse struct {
 // DeleteRequest представляет запрос на удаление сокращенных ссылок.
 // Содержит список идентификаторов ссылок для удаления.
 type DeleteRequest []string
+
+// StatsResponse представляет ответ с статистикой сервиса.
+type StatsResponse struct {
+	// URLs количество сокращённых URL в сервисе
+	URLs int64 `json:"urls"`
+	// Users количество пользователей в сервисе
+	Users int64 `json:"users"`
+}

@@ -221,3 +221,44 @@ func TestDeleteURLs(t *testing.T) {
 		mockRepo.AssertExpectations(t)
 	})
 }
+
+func TestGetStats(t *testing.T) {
+	cfg := util.GetConfig()
+	util.InitLogger(cfg.Logger)
+	ctx := context.Background()
+
+	t.Run("get stats successful", func(t *testing.T) {
+		mockRepo := new(mocks.MockLinkRepository)
+		svc := service.InitService(mockRepo)
+
+		expectedURLs := int64(100)
+		expectedUsers := int64(50)
+
+		mockRepo.On("GetStats", ctx).
+			Return(expectedURLs, expectedUsers, nil).
+			Once()
+
+		urls, users, err := svc.GetStats(ctx)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedURLs, urls)
+		assert.Equal(t, expectedUsers, users)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("repository error", func(t *testing.T) {
+		mockRepo := new(mocks.MockLinkRepository)
+		svc := service.InitService(mockRepo)
+
+		mockRepo.On("GetStats", ctx).
+			Return(int64(0), int64(0), errors.New("db error")).
+			Once()
+
+		urls, users, err := svc.GetStats(ctx)
+
+		assert.Error(t, err)
+		assert.Equal(t, int64(0), urls)
+		assert.Equal(t, int64(0), users)
+		mockRepo.AssertExpectations(t)
+	})
+}
