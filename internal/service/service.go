@@ -46,6 +46,10 @@ type LinkService interface {
 	// Принимает контекст, массив идентификаторов URL и идентификатор пользователя.
 	// Возвращает количество удаленных URL и ошибку, если операция не удалась.
 	DeleteURLs(ctx context.Context, ids []string, userID uuid.UUID) (int, error)
+
+	// GetStats возвращает статистику сервиса.
+	// Возвращает количество URL и пользователей, а также ошибку, если операция не удалась.
+	GetStats(ctx context.Context) (int64, int64, error)
 }
 
 // InitService создает и возвращает новый экземпляр Service с предоставленным репозиторием.

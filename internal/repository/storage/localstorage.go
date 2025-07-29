@@ -191,6 +191,30 @@ func (s *LocalStorage) Status(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+// GetStats возвращает статистику сервиса из локального хранилища.
+// Возвращает количество URL и пользователей, а также ошибку, если операция не удалась.
+func (s *LocalStorage) GetStats(ctx context.Context) (int64, int64, error) {
+	var (
+		urls  int64
+		users int64
+	)
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	userSet := make(map[uuid.UUID]bool)
+	urls = 0
+
+	for _, data := range s.links {
+		if !data.IsDeleted {
+			urls++
+			userSet[data.UserID] = true
+		}
+	}
+
+	users = int64(len(userSet))
+	return urls, users, nil
+}
+
 // readFromFile загружает данные из файла в хранилище.
 // Возвращает ошибку, если операция не удалась.
 func (s *LocalStorage) readFromFile() error {

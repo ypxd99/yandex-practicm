@@ -186,3 +186,9 @@ func (s *Service) DeleteURLs(ctx context.Context, ids []string, userID uuid.UUID
 	util.GetLogger().Infof("marked %d URLs as deleted", count)
 	return count, nil
 }
+
+// GetStats возвращает статистику сервиса.
+// Возвращает количество URL и пользователей, а также ошибку, если операция не удалась.
+func (s *Service) GetStats(ctx context.Context) (int64, int64, error) {
+	return s.repo.GetStats(ctx)
+}

@@ -256,3 +256,24 @@ func (h *Handler) deleteURLs(c *gin.Context) {
 
 	response(c, http.StatusAccepted, nil, nil)
 }
+
+// getStats обрабатывает GET-запрос для получения статистики сервиса.
+// Возвращает JSON с количеством URL и пользователей.
+// Статусы ответа:
+// - 200: Статистика успешно получена
+// - 403: Доступ запрещен (IP не в доверенной подсети)
+// - 500: Внутренняя ошибка сервера
+func (h *Handler) getStats(c *gin.Context) {
+	urls, users, err := h.service.GetStats(c.Request.Context())
+	if err != nil {
+		response(c, http.StatusInternalServerError, err, nil)
+		return
+	}
+
+	stats := model.StatsResponse{
+		URLs:  urls,
+		Users: users,
+	}
+
+	c.JSON(http.StatusOK, stats)
+}

@@ -119,3 +119,34 @@ func (p *Postgres) MarkDeletedURLs(ctx context.Context, ids []string, userID uui
 
 	return int(count), nil
 }
+
+// GetStats возвращает статистику сервиса из PostgreSQL.
+// Возвращает количество URL и пользователей, а также ошибку, если операция не удалась.
+func (p *Postgres) GetStats(ctx context.Context) (int64, int64, error) {
+	var (
+		urlsQuery = `
+			SELECT COUNT(*)
+			FROM shortener.links
+			WHERE is_deleted = false;
+		`
+		usersQuery = `
+			SELECT COUNT(DISTINCT user_id)
+			FROM shortener.links
+			WHERE is_deleted = false;
+		`
+		urls  int64
+		users int64
+	)
+
+	err := p.db.NewRaw(urlsQuery).Scan(ctx, &urls)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	err = p.db.NewRaw(usersQuery).Scan(ctx, &users)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return urls, users, nil
+}
